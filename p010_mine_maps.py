@@ -22,6 +22,7 @@ import local
 
 
 def panel_labels(ax):
+    """Add labels to panels."""
     text_props = {
         "horizontalalignment": "center",
         "verticalalignment": "top",
@@ -66,6 +67,25 @@ def instrument_site_labels(ax):
     ax.text(11660, 4400, "B", **text_props)
     ax.text(10700, 5000, "C", **text_props)
     ax.text(11550, 4850, "D", **text_props)
+
+
+def sub_instrument_site_labels(ax):
+    """Add labels to sub instrument sites (eg can sites for D)"""
+    text_props = {
+        "horizontalalignment": "center",
+        "verticalalignment": "center",
+        "fontsize": 10,
+        "rotation": -14.5,
+    }
+    peffects = [
+        path_effects.Stroke(linewidth=3, foreground="white"),
+        path_effects.Normal(),
+    ]
+
+    labels = {"d1": (11706.6, 4742.4), "d2": (11735.9, 4734.7)}
+    for label, coord in labels.items():
+        txt = ax.text(coord[0], coord[1], label, **text_props)
+        txt.set_path_effects(peffects)
 
 
 def burst_location_map(bursts):
@@ -144,26 +164,6 @@ def plot_instruments(ax, df):
             horizontalalignment="left",
             fontsize=12,
         )
-    can = df[df["sensor"].str.fullmatch(r"[A-Z]")]
-    for _, row in can.iterrows():
-        color = local.can_colors[row["sensor"]]
-        # ax.plot(row['easting'], row['northing'], "x", color=color)
-        text = ax.text(
-            row["easting"],
-            row["northing"],
-            row["sensor"],
-            color=color,
-            verticalalignment="center",
-            horizontalalignment="center",
-            fontsize=15,
-        )
-        text.set_path_effects(
-            [
-                path_effects.Stroke(linewidth=3, foreground="white"),
-                path_effects.Normal(),
-            ]
-        )
-
     return ax
 
 
@@ -172,7 +172,11 @@ def event_2_instrument_location_map(bursts, inst_df):
     fig, ax = plt.subplots(1, 1, figsize=(7, 7))
     plot_workings(local.dxfs["workings"], ax=ax)
     plot_events(bursts, c="#999ccc", ax=ax, s=magnitude_scaling(bursts))
-    plot_instrumentation_sites(local.dxfs["instrumentation"], ax=ax)
+    plot_instrumentation_sites(
+        local.dxfs["instrumentation"],
+        ax=ax,
+        site_slice=slice(-2, None),
+    )
 
     for time, color in local.burst_colors.items():
         plot_burst(time, local.dxfs["damage"], bursts, color, ax=ax)
@@ -193,7 +197,9 @@ def event_2_instrument_location_map(bursts, inst_df):
     sub_inst = inst_df[inst_df["location"] == "2N Outby"]
     plot_instruments(ax, sub_inst)
 
-    fig.tight_layout()
+    # Label can sub-sites.
+    sub_instrument_site_labels(ax)
+
     return fig
 
 

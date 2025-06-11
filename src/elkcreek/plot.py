@@ -167,9 +167,11 @@ def plot_workings(dxf, ax, facecolor="none", edgecolor="#1c1603", alpha=0.6, **k
 
 
 def plot_instrumentation_sites(
-    dxf, ax, facecolor="none", edgecolor="#ffad01", lw=2, **kwargs
+    dxf, ax, facecolor="none", edgecolor="#ffad01", lw=2, site_slice=None, **kwargs
 ):
     sites = get_polylines(dxf, "instruments", layers=["instrument_sites"])
+    if site_slice is not None:
+        sites = sites[site_slice]
     _plot_paths(sites, ax=ax, facecolor=facecolor, edgecolor=edgecolor, lw=lw, **kwargs)
     return ax
 

@@ -224,13 +224,14 @@ class GrondConfig(BaseModel):
 
 
 def _get_base_misfit_params(
-        pick,
-        duration_after=local.GROND_AFTER_PICK_TIME,
-        duration_before=0,
-        freqs=local.GROND_FREQ_RANGE,
+    pick,
+    duration_after=local.GROND_AFTER_PICK_TIME,
+    duration_before=0,
+    freqs=local.GROND_FREQ_RANGE,
 ):
     phase_name = pick["phase_hint"].lower()
-    stored_name = "{%s}" % f"stored:any_{phase_name}"
+
+    stored_name = "{%s}" % f"stored:any_{phase_name}"  # noqa
     misfit = dict(
         fmin=freqs[0],
         fmax=freqs[1],
@@ -383,13 +384,13 @@ def get_optimizer_config():
 
 
 def get_config(
-        wtgs,
-        ds_config,
-        eng_config,
-        prob_config,
-        analyser_configs,
-        opt_config,
-        event_name,
+    wtgs,
+    ds_config,
+    eng_config,
+    prob_config,
+    analyser_configs,
+    opt_config,
+    event_name,
 ):
     """Get a configuration file."""
     out = grond.Config(

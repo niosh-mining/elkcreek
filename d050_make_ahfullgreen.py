@@ -143,7 +143,7 @@ def main():
     events = model.load_events(str(local.pyrocko_catalog_path))
     event_df = pyrocko_events_to_df(events)
 
-    coal_depth_m = local.grond_datum - local.COAL_SEAM_ELEVATION
+    # coal_depth_m = local.grond_datum - local.COAL_SEAM_ELEVATION
     event_depth_min = EVENT_ELEVATION_RANGE[-1]
     event_depth_max = EVENT_ELEVATION_RANGE[0]
 

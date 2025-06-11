@@ -75,7 +75,7 @@ def read_bpc_excel_file(path):
     return out
 
 
-def read_support_can_excel_file(path):
+def read_support_can_excel_file(path, group=""):
     """Read the data from the support can files."""
 
     def _split_at_unnamed_column(df):
@@ -145,10 +145,11 @@ def read_support_can_excel_file(path):
     cans = _get_cans_from_columns(long_df)
 
     df = _extract_can_info(long_df, cans)
+    df["group"] = group  # add site
     return df
 
 
-def read_support_can_displacement(path):
+def read_support_can_displacement(path, group=""):
     """Read the displacement data from a can file."""
 
     def _get_sites_dict(df):
@@ -191,6 +192,6 @@ def read_support_can_displacement(path):
 
     # Then find cans
     disp_dic = _get_sites_dict(long_df)
-
     df = _extract_displacement(long_df, disp_dic)
+    df["group"] = group
     return df

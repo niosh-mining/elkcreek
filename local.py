@@ -101,10 +101,9 @@ station_map = plots / "p010_station_map.png"
 event_2_zoomed_in_map = plots / "p010_event_2_zoomed_in.png"
 can_map = plots / "p010_can_map.png"
 
-can_and_bpc_event_2_pressure_path = data_dir / "p050_event_2_pressure_and_stress.png"
-displacement_plot_path = data_dir / "p060_event_2_displacement.png"
+inst_response_event_2_plot_path = plots / "p050_event_2_inst_response.png"
 
-moment_tensor_plot_path = data_dir / "d080_moment_tensor_plots"
+moment_tensor_plot_path = plots / "d080_moment_tensor_plots"
 moment_tensor_plot_path.mkdir(exist_ok=True)
 
 
@@ -151,7 +150,7 @@ burst_times = [
 time_zone = "US/Mountain"  # Local timezone at the mine.
 
 # instrumentation plot time range
-inst_time_range = (np.datetime64("2011-02-15"), np.datetime64("2011-02-21"))
+inst_time_range = (np.datetime64("2011-02-16"), np.datetime64("2011-02-21"))
 
 # Parameters for filtering events.
 event_filter_params = dict(
@@ -228,8 +227,8 @@ map_extents_zoomed = {
     "z": [1500, 2300],
 }
 map_extents_event_2 = {
-    "x": [11500, 11750],
-    "y": [4600, 4850],
+    "x": [11600, 11775],
+    "y": [4700, 4825],
 }
 
 

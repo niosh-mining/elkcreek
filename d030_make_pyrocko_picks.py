@@ -11,6 +11,7 @@ from d020_make_pyrocko_inv import get_surface_stations
 
 POLARITY_MAP = {"positive": 1, "negative": -1, "": None}
 
+
 def main():
     """Convert picks to pyrocko format."""
     df = obsplus.picks_to_df(local.burst_events_qml_path)

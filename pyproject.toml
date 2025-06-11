@@ -12,9 +12,15 @@ dependencies = [
     "seaborn",
     "pyarrow",
     "obspy",
-    "obsplus",
+    "obsplus>=0.3.2",
     "ezdxf",
     "pyproj",
+    "openpyxl",
+    "pyrocko",
+    "grond",
+    "jinja2",
+    "rich",
+    "mplstereonet",
 
 ]
 
@@ -27,8 +33,6 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-
 
 # --- External tool configuration
 
