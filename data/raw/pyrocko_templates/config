@@ -1,0 +1,34 @@
+--- !pf.ConfigTypeA
+id: {{ gf_id }}
+modelling_code_id: qseis.2006b
+regions: []
+references: []
+earthmodel_1d: |2
+{{ model_layers }}
+     20.             5.8            3.46           2.6         1264.           600.
+     20.             6.5            3.85           2.9         1283.           600.
+     35.             6.5            3.85           2.9         1283.           600.
+  mantle
+     35.             8.04           4.48           3.58        1449.           600.
+   2892.            13.66           7.282          5.772        723.1          274.
+  outer-core
+   2892.             7.972          0.             9.928          5.782E+04      0.
+
+sample_rate: 100
+component_scheme: elastic10
+tabulated_phases:
+tabulated_phases:
+- !pf.TPDef
+  id: any_p
+  definition: p,P,p\,P\
+- !pf.TPDef
+  id: any_s
+  definition: s,S,s\,S\
+ncomponents: 10
+receiver_depth: {{ station_depth }}
+source_depth_min: {{ source_depth_min }}
+source_depth_max: {{ source_depth_max }}
+source_depth_delta: 20.0
+distance_min: {{ distance_min }}
+distance_max: {{ distance_max }}
+distance_delta: 20.0

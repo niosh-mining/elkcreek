@@ -1,0 +1,274 @@
+%YAML 1.1
+
+path_prefix: '..'
+rundir_template: 'outputs/grond/${problem_name}.grun'
+
+
+#event_names:
+{% for event_name in event_names %}
+  -{{ event_name }}
+{% endfor %}
+
+# -----------------------------------------------------------------------------
+# Configuration section for dataset (input data)
+#
+# The placeholder '${event_name}' will be expanded to the current event. This
+# enables us to use the same configuration for multiple events. The available
+# events are detected by looking into possible expansions of
+# dataset_config.events_path
+# -----------------------------------------------------------------------------
+
+dataset_config: !grond.DatasetConfig
+  events_path: '{{ local.pyrocko_catalog_path }}'
+  stations_path: '{{ local.pyrocko_inventory_path }}'
+  waveform_paths: [ {{local.event_waveforms}} ]
+  responses_stationxml_paths:
+    - '{{ local.pyrocko_specific_inv_path }}'
+
+  picks_paths:
+  - '{{ local.pyrocko_pick_path }}'
+
+  # Apply correction factors from station corrections.
+  apply_correction_factors: false
+
+  # Extend incomplete seismic traces (needed if not all buffer time is found)
+  extend_incomplete: true
+
+target_groups:
+{% for event_name in event_names %}
+-{{ wf_target_txt }}
+{% endfor %}
+
+
+- !grond.WaveformTargetGroup
+  normalisation_family: 'cc'
+  path: 'cc.P.local'
+
+  distance_min: 0.1e3
+  distance_max: 5.0e3
+
+  channels: ['Z']
+  weight: 1.0
+
+  misfit_config: !grond.WaveformMisfitConfig
+
+    fmin: 2.0
+    fmax: 15.0
+    # taper in freq domain
+    ffactor: 1.5
+    # phase name from Greens function store
+    pick_synthetic_traveltime: '{stored:any_p}'
+    pick_phasename: 'P'
+    tmin: '{stored:any_p}-0.1'
+    tmax: '{stored:any_p}+0.35'
+
+    domain: 'cc_max_norm'
+    tautoshift_max: 0.05
+    autoshift_penalty_max: 0.0001
+    norm_exponent: 1
+
+  interpolation: 'nearest_neighbor'
+  store_id: 'arma'
+
+- !grond.WaveformTargetGroup
+  normalisation_family: 'cc'
+  path: 'cc.S.local'
+
+  distance_min: 0.1e3
+  distance_max: 5.0e3
+
+  channels: ['Z']
+  weight: 1.0
+
+  misfit_config: !grond.WaveformMisfitConfig
+
+    fmin: 2.0
+    fmax: 15.0
+    # taper in freq domain
+    ffactor: 1.5
+    # phase name from Greens function store
+    pick_synthetic_traveltime: '{stored:any_s}'
+    pick_phasename: 'P'
+    tmin: '{stored:any_s}-0.1'
+    tmax: '{stored:any_s}+0.45'
+
+    domain: 'cc_max_norm'
+    tautoshift_max: 0.05
+    autoshift_penalty_max: 0.0001
+    norm_exponent: 1
+
+  # how to interpolate between GF source-rec points
+  interpolation: 'nearest_neighbor'
+  store_id: 'arma'
+
+- !grond.WaveformTargetGroup
+  normalisation_family: 'fd'
+  path: 'fd.P.local'
+
+  distance_min: 0.1e3
+  distance_max: 5.0e3
+
+  channels: ['Z']
+  weight: 1.0
+
+  misfit_config: !grond.WaveformMisfitConfig
+
+    fmin: 5.0
+    fmax: 20.0
+    ffactor: 1.5
+
+    pick_synthetic_traveltime: '{stored:any_p}'
+    pick_phasename: 'P'
+    tmin: '{stored:any_p}-0.1'
+    tmax: '{stored:any_p}+0.35'
+
+    domain: 'frequency_domain'
+
+    tautoshift_max: 0.10
+    autoshift_penalty_max: 0.0001
+
+    norm_exponent: 1
+
+  interpolation: 'nearest_neighbor'
+  store_id: 'arma'
+
+- !grond.WaveformTargetGroup
+  normalisation_family: 'fd'
+  path: 'fd.S.local'
+
+  distance_min: 0.1e3
+  distance_max: 5.0e3
+
+  channels: ['T']
+  weight: 1.0
+
+  misfit_config: !grond.WaveformMisfitConfig
+
+    fmin: 5.0
+    fmax: 10.0
+    ffactor: 1.5
+    pick_synthetic_traveltime: '{stored:any_s}'
+    pick_phasename: 'S'
+    tmin: '{stored:any_s}-0.1'
+    tmax: '{stored:any_s}+0.45'
+
+    domain: 'frequency_domain'
+
+    tautoshift_max: 0.10
+    autoshift_penalty_max: 0.0001
+    norm_exponent: 1
+
+  interpolation: 'nearest_neighbor'
+  store_id: 'arma'
+
+- !grond.PhasePickTargetGroup
+  distance_min: 0.1e3
+  distance_max: 5.0e3
+  normalisation_family: 'picks'
+  path: 'pick.p.local'
+  weight: 0.1
+  store_id: 'arma'
+
+  pick_synthetic_traveltime: '{stored:any_p}'
+  pick_phasename: 'P'
+
+  weight_traveltime: 0.0
+  weight_polarity: 1.00
+
+problem_config: !grond.CMTProblemConfig
+  name_template: 'sam_cc_${event_name}'
+
+  ranges:
+    time: '-0.5 .. 0.5 | add'
+    north_shift: '0 .. 0'
+    east_shift: '0 .. 0'
+    depth: '.595e3 .. 1.095e3'
+
+    # Range of magnitudes to allow
+    magnitude: '1.5 .. 3.0'
+
+    # Relative moment tensor component ranges (don't touch)
+    rmnn: '-1.41421 .. 1.41421'
+    rmee: '-1.41421 .. 1.41421'
+    rmdd: '-1.41421 .. 1.41421'
+    rmne: '-1 .. 1'
+    rmnd: '-1 .. 1'
+    rmed: '-1 .. 1'
+
+    # Source duration range [s]
+    duration: '0. .. 1.'
+
+  # Clearance distance around stations (no models with origin closer than this
+  # distance to any station are produced by the sampler)
+  distance_min: 0.1e3
+
+  # Type of moment tensor to restrict to (choices: 'full', 'deviatoric', 'dc')
+  mt_type: 'full'
+
+  # How to combine the target misfits. For L1 norm: 1, L2 norm: 2, etc.
+  norm_exponent: 1
+
+
+# -----------------------------------------------------------------------------
+# Configuration of pre-optimisation analysis phases.
+# determined during this phase.
+# -----------------------------------------------------------------------------
+#
+analyser_configs:
+
+# Balancing weights are determined with this analyser
+- !grond.TargetBalancingAnalyserConfig
+
+  # Number of models to forward model in the analysis, larger number -> better
+  # statistics)
+  niterations: 1000
+
+#- !grond.NoiseAnalyserConfig
+#  pre_event_noise_duration: 200.
+#  phase_def: '{stored:any_p}'
+#  statistic: 'std'
+#  mode: 'weeding'
+#  cutoff: 2.0
+#  cutoff_exception_on_high_snr: 3.0
+
+
+# -----------------------------------------------------------------------------
+# Configuration of the optimisation procedure
+# -----------------------------------------------------------------------------
+optimiser_config: !grond.HighScoreOptimiserConfig
+
+  # Number of bootstrap realisations to be tracked simultaneously in the
+  # optimisation
+  nbootstrap: 100
+
+  # stages of the sampler. Start with uniform sampling of the model space
+  # (!grond.UniformSamplerPhase), then narrow down to the interesting regions
+  # (!grond.DirectedSamplerPhase).
+  sampler_phases:
+
+  - !grond.UniformSamplerPhase
+      # Number of iterations
+      niterations: 2000
+
+  - !grond.DirectedSamplerPhase
+      # Number of iterations
+      niterations: 30000
+
+      # Multiplicator for width of sampler distribution at start of this phase
+      scatter_scale_begin: 2.0
+
+      # Multiplicator for width of sampler distribution at end of this phase
+      scatter_scale_end: 1.2
+# -----------------------------------------------------------------------------
+# Configuration section for synthetic seismogram engine
+#
+# Configures where to look for GF stores.
+# -----------------------------------------------------------------------------
+
+engine_config: !grond.EngineConfig
+
+  # Whether to use GF store directories listed in ~/.pyrocko/config.pf
+  gf_stores_from_pyrocko_config: false
+
+  # List of directories with GF stores
+  gf_store_superdirs: ['outputs/b020_gf_mean_library']

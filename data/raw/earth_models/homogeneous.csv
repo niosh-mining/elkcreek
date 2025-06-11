@@ -1,0 +1,2 @@
+name,top_elevation_km_asl,bottom_elevation_km_asl,p_velocity_km_s,s_velocity_km_s,density,p_q,s_q,_thickness
+Top,2.5,1,3048,2042,2.3,200,100,5

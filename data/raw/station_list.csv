@@ -1,0 +1,40 @@
+id,type,x,y,z,name,start_date,end_date,underground,description,azimuth,dip_offset,sensortype,comment
+1,geophone,10127,4681,2313,LOXs,2009-11-07,2010-07-09,False,LOX surface site,0,0,123,Putting here for lack of better place: there appears to have been a 10-day outage of the entire system from 6/16-6/25/2011. Pretty sure there was another in 2010-ish (June 30-July 5w 2010)? Also: notable reduction in events Jul 20-21. Real or network issues? Or hard-drive damage?
+2,geophone,10127,4681,2313,LOXbh,2009-11-07,2012-05-20,False,LOX surface site w/ borehole ge,0,0,23,This appears to have had a substantial outage btwn December 2011 and April 2012
+3,geophone,10704,5592,2477,RDP,2009-11-07,2014-05-14,False,RDP surface site,0,0,123,
+4,geophone,11635,5285,2538,RRL,2009-11-07,2014-05-14,False,RRL surface site,0,0,123,
+5,geophone,11810,4219,2509,PEB,2009-11-07,2012-05-21,False,PEB surface site,0,0,123,
+6,geophone,10237,5482,2489,NOX,2010-07-16,2014-05-14,False,NOX surface site,0,0,123,
+7,geophone,11089,4491,2477,EOR,2010-07-14,2011-06-11,False,EOR surface site,0,0,123,
+8,geophone,11059,4909,2444,TNG,2010-07-14,2011-07-19,False,TNG surface site,0,0,123,
+9,geophone,11139,5227,2472,LAY,2010-07-20,2012-07-23,False,LAY surface site,0,0,123,
+10,geophone,11327,5551,2538,FEN,2010-07-14,2013-12-04,False,FEN surface site,0,0,123,
+11,geophone,11866,4661,2521,RR2,2010-07-14,2014-05-14,False,RR2 surface site,0,0,123,
+12,geophone,9786,5319,1819,BNW,2010-07-12,2014-05-09,True,North West Bleeders,285,90,131,Intermittent in Jan 2013
+13,geophone,10224,4541,1852,WMW,2010-07-21,2013-01-09,True,West Mains West,285,90,131,
+14,geophone,11161,4300,1833,WMC,2010-07-20,2013-01-09,True,West Mains Centre,285,90,131,
+15,geophone,12001,4077,1819,WME,2010-07-22,2013-01-09,True,West Mains East,285,90,131,
+16,geophone,10747,5325,1797,TNW,2010-09-14,2010-11-04,True,3 North West,285,90,131,Why was this so short-lived?
+17,geophone,11546,5102,1783,TNE,2010-07-20,2011-03-18,True,3 North East,285,90,131,
+18,geophone,12475,5102,1760,NMN,2010-07-21,2013-01-09,True,North Mains North,285,90,131,
+19,geophone,12282,4509,1789,NMS,2010-07-20,2012-08-26,True,North Mains South,285,90,131,
+20,geophone,11153,5216,1793,TNC,2010-11-05,2011-01-11,True,3 North Central,285,90,131,These azimuths seem mighty pencil-whipped. I hope they're accurate
+21,geophone,12021,4991,1770,TEE,2011-01-11,2011-05-06,True,TEE,285,90,131,
+22,geophone,12112,5342,1759,FEE,2011-03-18,2011-06-01,True,FEE,285,90,131,Down btwn mid-June and late-July 2011
+23,geophone,9766,5781,1797,BBW,2011-06-04,2013-01-09,True,BBW,285,90,131,
+24,geophone,10539,5765,1772,FNW,2011-05-13,2011-06-15,True,4 North West,285,90,131,Another weirdly short-lived station
+25,geophone,10062,6471,2484,NWF,2011-06-25,2014-05-14,False,NWF surface site,0,0,123,
+26,geophone,11235,6312,2591,FMI,2011-06-25,2014-05-14,False,FMI surface site,0,0,123,
+27,geophone,12133,5018,2472,LGS,2011-07-30,2014-05-14,False,LGS surface site,0,0,123,
+28,geophone,12314,5665,2445,LGN,2011-07-29,2014-05-14,False,LGN surface site,0,0,123,
+29,geophone,11027,5639,1770,FNC,2011-09-08,2012-02-14,True,4 North Center,285,90,131,
+30,geophone,11382,5550,1765,FNS,2012-02-16,2012-03-12,True,4 North South?,285,90,131,
+31,geophone,11802,5438,1760,FNE,,,True,4 North East,285,90,131,Tracing the timing of when different stations were moved around - I don't think this ever got installed. I can't find it in any of the data.
+32,geophone,10898,6228,2565,WAW,2012-06-11,2013-11-13,False,WAW surface site,0,0,23,
+33,geophone,10659,6715,2533,SNW,2012-05-21,2013-06-05,False,SNW surface site,0,0,123,
+34,geophone,11657,6912,2533,PDC,2012-07-23,2014-05-14,False,PDF surface site,0,0,123,
+35,geophone,10727,6217,1751,SCT,2012-07-24,2012-08-15,True,SCT,285,90,131,
+36,geophone,12143,5848,1746,SFE,2012-07-24,2013-01-09,True,SFE,285,90,131,
+37,geophone,11214,6078,1748,SCB,2012-08-28,2012-10-04,True,SCB,285,90,131,
+38,geophone,11568,5984,1748,SCC,2012-08-28,2013-01-09,True,SCC,285,90,131,
+39,geophone,11851,5911,1747,SCD,2012-10-29,2013-01-09,True,SCD,285,90,131,

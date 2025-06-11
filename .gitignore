@@ -1,0 +1,18 @@
+# Undesired droppings
+.idea/
+**/__pycache__/
+**/.ipynb_checkpoints/
+**/*.egg_info/
+.~*
+
+# Project specific
+data/derived/
+plots/
+report/
+
+# Shawn-specific things
+**/dont_commit/
+pytest.ini
+
+*.egg-info
+uv.lock

@@ -1,0 +1,26 @@
+--- !pf.ConfigTypeA
+
+id: {{ gf_id }}
+modelling_code_id: ahfullgreen
+regions: []
+references: []
+earthmodel_1d: |2
+      0.             {{ p_velocity }}           {{ s_velocity }}             {{ density }}           200.           100.
+     30.             {{ p_velocity }}           {{ s_velocity }}             {{ density }}           200.           100.
+sample_rate: {{ sampling_rate }}
+component_scheme: elastic10
+tabulated_phases:
+- !pf.TPDef
+  id: any_p
+  definition: p,P,p\,P\
+- !pf.TPDef
+  id: any_s
+  definition: s,S,s\,S\
+ncomponents: 10
+receiver_depth: {{ station_depth }}
+source_depth_min: {{ source_depth_min }}
+source_depth_max: {{ source_depth_max }}
+source_depth_delta: 20.0
+distance_min: {{ distance_min }}
+distance_max: {{ distance_max }}
+distance_delta: 20.0
