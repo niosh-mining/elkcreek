@@ -64,7 +64,11 @@ def modified_omori_cumulative(t, k, c, p):
         return k * np.log((t + c) / c)
     else:
         return (k / (1 - p)) * ((t + c) ** (1 - p) - c ** (1 - p))
-    return k / (c + t)
+
+
+def omori_cumulative(t, k, c):
+    """The un-modified omori's law."""
+    return k * np.log((t + c) / c)
 
 
 def fit_omori(df, event_time):
@@ -74,8 +78,8 @@ def fit_omori(df, event_time):
     time_after_event = t_rel[after_event] / np.timedelta64(1, "h")
     cum = np.arange(len(time_after_event))
 
-    out = curve_fit(modified_omori_cumulative, time_after_event, cum)
-    out = {"k": out[0][0], "c": out[0][1], "p": out[0][2]}
+    out = curve_fit(omori_cumulative, time_after_event, cum)
+    out = {"k": out[0][0], "c": out[0][1]}  # "p": out[0][2]}
 
     return out
 
@@ -87,7 +91,7 @@ def plot_omori(ax, df, event_time, params):
     time_after_event = t_rel[after_event] / np.timedelta64(1, "h")
     start_count = len(df) - len(time_after_event)
 
-    predicted = modified_omori_cumulative(time_after_event, **params)
+    predicted = omori_cumulative(time_after_event, **params)
     time_to_plot = df[after_event]["days_from_event"]
 
     ax.plot(
@@ -145,7 +149,7 @@ def add_subplot_labels(axes):
 def main():
     """Make plots of the aftershock from bursts, plot omoris."""
     event_times_utc = [
-        (t, f"event_{num+1}") for num, t in enumerate(local.burst_times)
+        (t, f"event_{num + 1}") for num, t in enumerate(local.burst_times)
     ][1:-1]
 
     event_colors = [local.burst_colors[x[0]] for x in event_times_utc]
@@ -166,6 +170,7 @@ def main():
         plot_mag_ts(ax, twin_ax, sub_time_df, color)
 
         fit_params = fit_omori(sub_time_df, event_time)
+        print(fit_params)
         plot_omori(twin_ax, sub_time_df, event_time, fit_params)
         set_title(ax, sub_time_df, fit_params, label)
 
