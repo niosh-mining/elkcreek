@@ -1,7 +1,23 @@
 """Utilities for Elk Creek."""
 
+import datetime
+
+import numpy as np
 import pandas as pd
+import pytz
+from obsplus.utils.time import to_datetime64
 from pyproj import CRS, Transformer
+
+
+def convert_timezone(time, tz_in, tz_out) -> np.datetime64:
+    """Convert from one time zone to another."""
+    dt = (
+        datetime.datetime.fromisoformat(str(to_datetime64(time)))
+        .replace(tzinfo=pytz.timezone(tz_in))
+        .astimezone(pytz.timezone(tz_out))
+        .replace(tzinfo=None)
+    )
+    return to_datetime64(dt)
 
 
 def add_local_time_to_df(df, tz, time_column=None):

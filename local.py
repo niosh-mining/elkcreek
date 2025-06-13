@@ -151,7 +151,7 @@ burst_times = [
 time_zone = "US/Mountain"  # Local timezone at the mine.
 
 # instrumentation plot time range
-inst_time_range = (np.datetime64("2011-02-16"), np.datetime64("2011-02-21"))
+inst_time_range = (np.datetime64("2011-02-15T03"), np.datetime64("2011-02-21T10"))
 
 # Parameters for filtering events.
 event_filter_params = dict(

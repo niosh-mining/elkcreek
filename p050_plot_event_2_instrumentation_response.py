@@ -4,10 +4,10 @@ Plot the instrumentation response to event 2.
 
 from collections import defaultdict
 
-import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from elkcreek.util import convert_timezone
 
 import local
 
@@ -35,44 +35,28 @@ def filter_date(df, t1=local.inst_time_range[0], t2=local.inst_time_range[-1]):
     return df[(time >= t1) & (time <= t2)]
 
 
-def plot_bpc(ax, df):
+def plot_bpc(ax, df, burst_time):
     """Plot bpc data."""
     for name, sub in df.groupby("name"):
         sub = sub.set_index("local_time")["pressure_pa"].sort_index()
         sub = sub.loc[local.inst_time_range[0] : local.inst_time_range[-1]] / 1e6
         sub = sub - np.nanmin(sub)  # Normalize to pre-burst pressure.
         color = local.bpc_colors[name]
-        ax.plot(sub.index.values, sub.values, label=name, color=color)
+        x_axis = (sub.index.values - burst_time) / np.timedelta64(1, "D")
+        ax.plot(x_axis, sub.values, label=name, color=color)
     ax.legend()
     ax.set_ylabel("Pressure (MPa)")
 
 
 def prep_ax(ax, label):
     """Prepare the plotting axis."""
-    event_time = pd.to_datetime(local.burst_times[1])
-    event_time_local = (
-        event_time.tz_localize("UTC")
-        .tz_convert(local.time_zone)
-        .tz_localize(None)
-        .to_numpy()
-    )
-    ax.set_xlim(local.inst_time_range)
-    ax.axvline(
-        event_time_local,
-        color="gray",
-        alpha=0.5,
-        ls="--",
-        lw=2.0,
-    )
-    date_format = mdates.DateFormatter("%m-%d")
-    ax.xaxis.set_major_formatter(date_format)
     # Add subplot label
     ax.text(
         0.03, 1.17, label, transform=ax.transAxes, fontsize=11, va="top", ha="right"
     )
 
 
-def plot_can_load(ax, df):
+def plot_can_load(ax, df, burst_time):
     """Plot the cans."""
     group_key = dict(df.groupby("can")["group"].first())
     groups = defaultdict(list)
@@ -91,7 +75,8 @@ def plot_can_load(ax, df):
         time = time[in_time]
         load = (sub.values / 1.102)[in_time]
         load = load - np.nanmin(load)  # normalize to pre-burst pressure.
-        ser = pd.Series(data=load, index=time)
+        x_axis = (time - burst_time) / np.timedelta64(1, "D")
+        ser = pd.Series(data=load, index=x_axis)
         ser.name = name
         group = group_key[name]
         groups[group].append(ser)
@@ -106,7 +91,7 @@ def plot_can_load(ax, df):
     ax.set_ylabel("Load (tonnes)")
 
 
-def plot_can_displacement(ax, df):
+def plot_can_displacement(ax, df, burst_time):
     """Plot the cans."""
     groups = defaultdict(list)
 
@@ -127,7 +112,9 @@ def plot_can_displacement(ax, df):
         if pd.isnull(np.max(disp) - np.min(disp)):
             continue
 
-        ser = pd.Series(data=disp, index=time)
+        x_axis = (time - burst_time) / np.timedelta64(1, "D")
+
+        ser = pd.Series(data=disp, index=x_axis)
         ser.name = name
         group_name = f"{group}_rf" if name.startswith("RF") else f"{group}_can"
         groups[group_name].append(ser)
@@ -142,12 +129,15 @@ def plot_can_displacement(ax, df):
 
     ax.legend(loc="lower left")
     ax.set_ylabel("Displacement (cm)")
-    ax.set_xlabel("Month-Day")
+    ax.set_xlabel("Days from Event")
 
 
 def main():
     """Plot the event pressure response."""
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, figsize=(4.6, 5.0))
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, figsize=(3.5, 5.1))
+    burst_time_utc = np.datetime64(local.burst_times[1])
+    burst_time_local = convert_timezone(burst_time_utc, "UTC", "US/Mountain")
+
     prep_ax(ax1, "(a)")
     prep_ax(ax2, "(b)")
     prep_ax(ax3, "(c)")
@@ -157,13 +147,16 @@ def main():
         lambda x: x["name"].str.startswith("BP")
     ]
     df_disp = pd.read_parquet(local.extracted_can_disp_path)
-    plot_bpc(ax1, df_bpc)
-    plot_can_load(ax2, df_can)
-    plot_can_displacement(ax3, df_disp)
+    plot_bpc(ax1, df_bpc, burst_time_local)
+    ax1.set_title("BPC Pressure", fontdict={"fontsize": 10.0})
+    plot_can_load(ax2, df_can, burst_time_local)
+    ax2.set_title("Can Load", fontdict={"fontsize": 10.0})
+    plot_can_displacement(ax3, df_disp, burst_time_local)
+    ax3.set_title("Convergence", fontdict={"fontsize": 10.0})
 
     plt.subplots_adjust(hspace=0.3)
-    # plt.tight_layout()
-    fig.savefig(local.inst_response_event_2_plot_path)
+    plt.tight_layout()
+    fig.savefig(local.inst_response_event_2_plot_path, transparent=True)
 
 
 if __name__ == "__main__":
