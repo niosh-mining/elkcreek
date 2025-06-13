@@ -2,7 +2,9 @@
 Make plots of events around coalburst times.
 In this case, we are only looking at largest 2 events.
 """
-import matplotlib.dates as mdates
+
+from string import ascii_lowercase
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -10,63 +12,47 @@ from scipy.optimize import curve_fit
 
 import local
 
-event_times_utc = {
-    "2011-02-17T22:47:20": "event_2",
-    "2011-10-19T05:24:16": "event_3",
-}
 
-
-def get_fig_axes():
+def get_fig_axes(axis_count):
     """Return a figure and axes."""
-    fig, axes = plt.subplots(nrows=1, ncols=2, sharey=True, figsize=(7 * 1.3, 3 * 1.1))
+    figsize = (3.5, 5.25)
+    fig, axes = plt.subplots(nrows=axis_count, ncols=1, sharex=True, figsize=figsize)
     return fig, axes
 
 
 def get_sub_df(
-        df,
-        event_time,
-        time_before=np.timedelta64(2, "D"),
-        time_after=np.timedelta64(3, "D"),
+    df,
+    event_time,
+    time_before=np.timedelta64(2, "D"),
+    time_after=np.timedelta64(5, "D"),
 ):
     """Get a subset of the df around event time."""
     ts = pd.Timestamp(event_time).to_numpy()
     t1 = ts - time_before
     t2 = ts + time_after
-    time = pd.to_datetime(df['time'])
+    time = pd.to_datetime(df["time"])
     in_time = (time >= t1) & (time <= t2)
     sub_time = df[in_time]
 
+    time_from_event = (sub_time["time"] - ts) / np.timedelta64(1, "D")
+    sub_time["days_from_event"] = time_from_event
     return sub_time
 
 
-def plot_mag_ts(ax, sub, label):
+def plot_mag_ts(ax, twin, sub, color):
     """Plot the magnitude time series."""
     df = sub.sort_values("time")
-    time = df['time'].values.astype('datetime64[ns]')
-    mag = df['local_mag'].values
+    x_axis = sub["days_from_event"].values
+    mag = df["local_mag"].values
 
-    ax.scatter(time, mag, alpha=0.3, c="tab:blue")
+    ax.scatter(x_axis, mag, alpha=0.5, c=color, edgecolors="gray", linewidth=0.14)
 
-    myfmt = mdates.DateFormatter("%m/%d")
-    ax.xaxis.set_major_formatter(myfmt)
+    # replot the main event for emphasis
+    ax.scatter(0, mag.max(), c=color, edgecolors="gray", linewidth=0.5, s=55)
 
     event_count = np.arange(len(df)) + 1
 
-    twin = ax.twinx()
-    twin.plot(time, event_count, lw=2, ls='--', c='0.5')
-
-    # These parameters are a bit add-hoc just to get the twin axis
-    # to line up correctly.
-    twin.set_ylim(0, 900)
-    twin.set_yticks([200, 400, 600, 800])
-
-    year = pd.to_datetime(time.max()).year
-    # label axes
-    ax.set_xlabel(f"Date ({year:d})")
-
-    mag = np.round(mag.max(), 1)
-    title = f"{label.replace("_", " ").title()} ($M$={mag:0.1f})"
-    ax.set_title(title)
+    twin.plot(x_axis, event_count, lw=2, ls="--", c="0.6")
 
     return ax, twin
 
@@ -83,67 +69,113 @@ def modified_omori_cumulative(t, k, c, p):
 
 def fit_omori(df, event_time):
     """Try fitting omori's law."""
-
-    t_rel = pd.to_datetime(df['time']).values - pd.to_datetime(event_time).to_numpy()
+    t_rel = pd.to_datetime(df["time"]).values - event_time
     after_event = t_rel >= np.timedelta64(0)
     time_after_event = t_rel[after_event] / np.timedelta64(1, "h")
     cum = np.arange(len(time_after_event))
 
     out = curve_fit(modified_omori_cumulative, time_after_event, cum)
-    out = {"k":out[0][0], "c": out[0][1], "p": out[0][2]}
+    out = {"k": out[0][0], "c": out[0][1], "p": out[0][2]}
 
     return out
 
 
-def plot_omori(ax, df, time_from_event, params):
-    """plot omori's curve."""
-    event_time = np.datetime64(time_from_event)
-    t_rel = pd.to_datetime(df['time']).values - pd.to_datetime(event_time).to_numpy()
+def plot_omori(ax, df, event_time, params):
+    """Plot omori's curve."""
+    t_rel = pd.to_datetime(df["time"]).values - pd.to_datetime(event_time).to_numpy()
     after_event = t_rel > np.timedelta64(0)
     time_after_event = t_rel[after_event] / np.timedelta64(1, "h")
     start_count = len(df) - len(time_after_event)
 
-
     predicted = modified_omori_cumulative(time_after_event, **params)
-    time_to_plot = pd.to_datetime(df[after_event]['time']).to_numpy()
+    time_to_plot = df[after_event]["days_from_event"]
 
     ax.plot(
-        time_to_plot, predicted+start_count, label="Omori's law",
-        color='red', alpha=0.25,lw=2.5,
-
+        time_to_plot,
+        predicted + start_count,
+        label="Omori's law",
+        color="red",
+        alpha=0.45,
+        lw=2.5,
     )
 
 
+def set_title(ax, sub_time_df, fit_params, label):
+    """Create/set title."""
+    # create the title
+    mag = sub_time_df["local_mag"].max()
+    title = (
+        f"{label.title().replace("_", " ")} (M={mag:.1f}) "
+        f"c:{fit_params['c']:0.1f} "
+        f"k:{int(np.round(fit_params['k']))}"
+    )
+    ax.set_title(title, fontdict={"fontsize": 10.0})
+    return ax
+
+
+def set_ylabels(axes, twin_axes):
+    """Set the y labels of the plot."""
+    axes[-1].set_xlabel("Days from Event")
+    assert len(axes) % 2 == 1, "need odd number of axis."
+    middle_ax = axes[len(axes) // 2]
+    middle_twin = twin_axes[len(axes) // 2]
+
+    middle_ax.set_ylabel("Magnitude")
+    middle_twin.set_ylabel("Cumulative Event Count")
+
+
+def rectify_y_axis(axes):
+    """Find the min/max values and set the ylims all the same."""
+    ylims = [ax.get_ylim() for ax in axes]
+    min_val = min([x[0] for x in ylims])
+    max_val = max([x[1] for x in ylims])
+    for ax in axes:
+        ax.set_ylim(min_val, max_val)
+
+
+def add_subplot_labels(axes):
+    """Add the labels to each subplot."""
+    for ax, letter in zip(axes, ascii_lowercase):
+        label = f"({letter})"
+        ax.text(
+            0.03, 1.17, label, transform=ax.transAxes, fontsize=11, va="top", ha="right"
+        )
+
 
 def main():
-    df = pd.read_parquet(local.final_catalog)
-    fig, axes = get_fig_axes()
+    """Make plots of the aftershock from bursts, plot omoris."""
+    event_times_utc = [
+        (t, f"event_{num+1}") for num, t in enumerate(local.burst_times)
+    ][1:-1]
 
-    for (event_time, label), ax in zip(event_times_utc.items(), axes):
-        time = pd.to_datetime(event_time).to_numpy()
+    event_colors = [local.burst_colors[x[0]] for x in event_times_utc]
+
+    df = pd.read_parquet(local.final_catalog)
+    fig, axes = get_fig_axes(len(event_times_utc))
+    twin_axes = [x.twinx() for x in axes]
+
+    zip_iter = zip(event_times_utc, axes, twin_axes, event_colors)
+    for (etime_str, label), ax, twin_ax, color in zip_iter:
+        event_time = pd.to_datetime(etime_str).to_numpy()
         # Get sub df to include events in volume.
         expected_label = f"vsa_{label}"
         sub_vol_df = df[df[expected_label]]
         # Get sub df in specified time around event.
-        sub_time_df = get_sub_df(sub_vol_df, time).sort_values("time")
-        # plot event, then do labels.
-        ax, twin_ax = plot_mag_ts(ax, sub_time_df, label)
+        sub_time_df = get_sub_df(sub_vol_df, event_time).sort_values("time")
+        # plot event
+        plot_mag_ts(ax, twin_ax, sub_time_df, color)
 
         fit_params = fit_omori(sub_time_df, event_time)
-        print(f"found the following omori params for {label}: {fit_params}")
         plot_omori(twin_ax, sub_time_df, event_time, fit_params)
+        set_title(ax, sub_time_df, fit_params, label)
 
-        if ax is axes[-1]:
-            twin_ax.set_ylabel("Cumulative Event Count")
-        else:
-            ax.set_ylabel("Magnitude")
-            twin_ax.set_yticklabels([])
-
+    set_ylabels(axes, twin_axes)
+    rectify_y_axis(axes)
+    rectify_y_axis(twin_axes)
     fig.tight_layout(w_pad=0.2)
-    fig.savefig(local.omoris_plot_path)
-
+    add_subplot_labels(axes)
+    fig.savefig(local.omoris_plot_path, transparent=True, dpi=300)
 
 
 if __name__ == "__main__":
     main()
-

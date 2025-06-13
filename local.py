@@ -100,7 +100,7 @@ burst_map = plots / "p010_burst_events.png"
 station_map = plots / "p010_station_map.png"
 event_2_zoomed_in_map = plots / "p010_event_2_zoomed_in.png"
 can_map = plots / "p010_can_map.png"
-omoris_plot_path = plots / "p020_aftershocks"
+omoris_plot_path = plots / "p020_aftershocks.png"
 
 inst_response_event_2_plot_path = plots / "p050_event_2_inst_response.png"
 

@@ -140,7 +140,7 @@ def plot_can_displacement(ax, df):
         ser = pd.concat(ser_list, axis=1).mean(axis=1)
         ax.plot(ser.index, ser.values, label=label, ls=ls, color=color)
 
-    ax.legend(loc='lower left')
+    ax.legend(loc="lower left")
     ax.set_ylabel("Displacement (cm)")
     ax.set_xlabel("Month-Day")
 
