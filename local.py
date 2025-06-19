@@ -98,7 +98,7 @@ pre_filtering = pairplots / "pre_filtering"
 post_filtering = pairplots / "post_filtering"
 burst_map = plots / "p010_burst_events.png"
 station_map = plots / "p010_station_map.png"
-event_2_zoomed_in_map = plots / "p010_event_2_zoomed_in.png"
+siteD_inst_map = plots / "p010_siteD_instrumentation.png"
 can_map = plots / "p010_can_map.png"
 omoris_plot_path = plots / "p020_aftershocks.png"
 
@@ -180,7 +180,6 @@ color_palette = sns.xkcd_palette(
         "dull yellow",
         "dark pink",
         "orange yellow",
-        "shit brown",
     ]
 )
 burst_colors = {x: y for x, y in zip(burst_times, color_palette.as_hex())}
@@ -214,6 +213,11 @@ can_colors = {
     "H": "tab:gray",
     "I": "tab:olive",
     "J": "tab:cyan",
+}
+
+savefig_params = {
+    "bbox_inches": "tight",
+    "dpi": 300,
 }
 
 

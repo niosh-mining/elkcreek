@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
 from dataclasses import dataclass
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import mplstereonet  # noqa
@@ -14,8 +14,8 @@ import seaborn as sns
 from matplotlib import dates as mdates
 from matplotlib.contour import QuadContourSet
 from matplotlib.font_manager import FontProperties
-from matplotlib.legend import Legend
 from matplotlib.patches import PathPatch, Polygon
+from matplotlib.path import PPath
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from pyrocko.moment_tensor import MomentTensor
 from pyrocko.plot import beachball, mpl_color
@@ -46,72 +46,59 @@ LABEL_MAPPING = {
 }
 
 
-def make_source_pairplot(
-    cat: pd.DataFrame,
-    x: str,
-    y: str,
-    hue: str = "event_status",
-    palette: sns.palettes._ColorPalette = None,
-    hue_order: Iterable[str] = None,
-) -> tuple[plt.Figure, plt.Axes]:
+def configure_font_sizes(fonts: dict):
     """
-    Plot two source parameters against each other
+    Set the global font sizes for matplotlib figures
 
     Parameters
     ----------
-    cat
-        Event catalog
-    x
-        Parameter to plot on the x-axis
-    y
-        Parameter to plot on the y-axis
-    hue
-        Color the events according to this parameter
-    palette
-        Color palette to use
-    hue_order
-        The order that categories in hue should be plotted in
-
-    Returns
-    -------
-    The matplotlib.Figure and matplotlib.Axes that the plot is created on
+    fonts
+        Dictionary with the font sizes to apply to different settings. Required
+        keys include 'titlesize', 'fontsize', and 'ticksize'.
     """
-    fig, ax = plt.subplots(1, 1, figsize=(3.5, 3))
-    ax = sns.scatterplot(
-        cat, x=x, y=y, hue=hue, alpha=0.1, palette=palette, hue_order=hue_order, ax=ax
-    )
-    # Grab the legend and fix the transparencies of all of the symbols to make
-    # them more visible
-    legend_fontsize = 8
-    for child in ax.get_children():
-        if isinstance(child, Legend):
-            for line in child.get_lines():
-                line.set_alpha(0.8)
-            # Adjust the title of the legend
-            txt = child.get_title()
-            txt.set_text(LABEL_MAPPING[hue])
-            txt.set_size(legend_fontsize)
-            # Reduce the fontsize of the labels to 8 so they don't dwarf the
-            # rest of the plot
-            for txt in child.get_texts():
-                txt.set_size(legend_fontsize)
-            break
-    # Set the axes labels to something nicer
-    ax.set_xlabel(LABEL_MAPPING[ax.get_xlabel()])
-    ax.set_ylabel(LABEL_MAPPING[ax.get_ylabel()])
-    return fig, ax
+    plt.rcParams["font.size"] = fonts["fontsize"]
+    plt.rcParams["figure.titlesize"] = fonts["titlesize"]
+    plt.rcParams["axes.titlesize"] = fonts["titlesize"]
+    plt.rcParams["axes.labelsize"] = fonts["fontsize"]
+    plt.rcParams["xtick.labelsize"] = fonts["ticksize"]
+    plt.rcParams["ytick.labelsize"] = fonts["ticksize"]
+    plt.rcParams["legend.fontsize"] = fonts["fontsize"]
 
 
 # --- Plotting "grids" of data
 def plot_overburden(
-    dxf,
-    contours,
-    lower_left,
-    upper_right,
-    spacing,
-    gridding_kwargs=None,
-    plotting_kwargs=None,
-):
+    dxf: Path,
+    contours: list[float | int],
+    lower_left: tuple[float, float],
+    upper_right: tuple[float, float],
+    spacing: float,
+    gridding_kwargs: dict | None = None,
+    plotting_kwargs: dict | None = None,
+) -> tuple[plt.Figure, plt.Axes]:
+    """
+    Create a figure containing overburden contours
+
+    Parameters
+    ----------
+    dxf
+        Path of the dxf file containing overburden information
+    contours
+        The contour levels to use
+    lower_left
+        Coordinate of the lower-left corner of the plot extents
+    upper_right
+        Coordinate of the upper-right corner of the plot extents
+    spacing
+        Spacing of the grid to use for interpolating the overburden contours
+    gridding_kwargs, optional
+        Keyword arguments to pass to elkcreek.dxf.build_and_cache_topo
+    plotting_kwargs, optional
+        Keyword arguments to pass to elkcreek.Grid.plot
+
+    Returns
+    -------
+        The newly created Figure and Axes
+    """
     grid_params = {"method": "cubic"}
     grid_params.update(gridding_kwargs or {})
     ob = build_and_cache_topo(
@@ -126,10 +113,21 @@ def contourplot(
 ) -> tuple[plt.Figure, plt.Axes]:
     """
     Create a contour plot from a Grid of data
+
+    Parameters
+    ----------
+    grid
+        Grid containing the data of interest
+    levels
+        The contour levels to use
+
+    Returns
+    -------
+        The newly created figure and Axes
     """
     fig, ax = grid.plot(
         contour=True,
-        colors=["darkolivegreen", "silver", "silver"],
+        colors=["#aa0000", "#888888", "#888888"],
         levels=levels,
         colorbar=False,
         **kwargs,
@@ -143,22 +141,50 @@ def contourplot(
 
 
 # --- Plotting dxf elements
-def _plot_patch(path, ax, legend_label=None, **kwargs):
+def _plot_patch(path: PPath, ax: plt.Axes, legend_label: str | None = None, **kwargs):
+    """Take a matplotlib Path and plot a Patch"""
     if legend_label is None:
         ppatch = PathPatch(path, **kwargs)
     else:
         ppatch = PathPatch(path, label=legend_label, **kwargs)
     ax.add_patch(ppatch)
+
+
+def _plot_paths(paths: PPath, ax: plt.Axes, **kwargs):
+    """Plot an iterable of matplotlib Paths"""
+    for path in paths:
+        _plot_patch(path, ax=ax, **kwargs)
     return
 
 
-def _plot_paths(paths, ax, **kwargs):
-    for path in paths:
-        _plot_patch(path, ax=ax, **kwargs)
-    return ax
+def plot_workings(
+    dxf: Path,
+    ax: plt.Axes,
+    facecolor: str = "none",
+    edgecolor: str = "#1c1603",
+    alpha: float = 0.6,
+    **kwargs,
+):
+    """
+    Plot a set of mine workings from a dxf file
 
+    Parameters
+    ----------
+    dxf
+        Path to the dxf file
+    ax
+        Axes to plot the workings an
+    facecolor, optional
+        Face color to apply to the resulting Patches
+    edgecolor, optional
+        Edge color to apply to the resulting Patches
+    alpha, optional
+        Transparency to apply to the workings
 
-def plot_workings(dxf, ax, facecolor="none", edgecolor="#1c1603", alpha=0.6, **kwargs):
+    Other Parameters
+    ----------------
+    See matplotlib.patches.PathPatch
+    """
     workings = get_polylines(dxf, "workings")
     _plot_paths(
         workings, ax=ax, facecolor=facecolor, edgecolor=edgecolor, alpha=alpha, **kwargs
@@ -166,9 +192,68 @@ def plot_workings(dxf, ax, facecolor="none", edgecolor="#1c1603", alpha=0.6, **k
     return ax
 
 
-def plot_instrumentation_sites(
-    dxf, ax, facecolor="none", edgecolor="#ffad01", lw=2, site_slice=None, **kwargs
+def fill_mined_areas(
+    dxf: Path,
+    ax: plt.Axes,
+    facecolor: str = "#dddddd",
+    edgecolor: str = "none",
+    **kwargs,
 ):
+    """
+    Plot a set of Patches representing areas that have been mined out from a dxf
+
+    Parameters
+    ----------
+    dxf
+        Path of the DXF file containing the production info
+    ax
+        Axes to plot the Patches on`
+    facecolor
+        Face color for the Patches
+    edgecolor
+        Edge color for the Patches
+
+    Other Parameters
+    ----------------
+    See matplotlib.patches.PathPatch
+    """
+    mined_areas = get_polylines(dxf, "mined_areas")
+    _plot_paths(mined_areas, ax=ax, facecolor=facecolor, edgecolor=edgecolor, **kwargs)
+    return ax
+
+
+def plot_instrumentation_sites(
+    dxf: Path,
+    ax: plt.Axes,
+    facecolor: str = "none",
+    edgecolor: str = "#ffad01",
+    lw: float = 2,
+    site_slice: slice | None = None,
+    **kwargs,
+):
+    """
+    Plot the instrumentation sites
+
+    Parameters
+    ----------
+    dxf
+        Path of the DXF containing the instrument sites
+    ax
+        Axes to plot the Patches on
+    facecolor
+        Face color for the Patches
+    edgecolor
+        Edge color for the patches
+    lw
+        Line weight for the patches
+    site_slice
+        Slice to apply to the entity list (i.e., if you only want to plot a
+        subset of the sites)
+
+    Other Parameters
+    ----------------
+    See matplotlib.patches.PathPatch
+    """
     sites = get_polylines(dxf, "instruments", layers=["instrument_sites"])
     if site_slice is not None:
         sites = sites[site_slice]
@@ -176,21 +261,93 @@ def plot_instrumentation_sites(
     return ax
 
 
-def plot_faults(dxf, ax, facecolor="none", edgecolor="#224400", lw=1.5, **kwargs):
+def plot_bpcs(ax: plt.Axes, df: pd.DataFrame, bpc_colors: dict):
+    """
+    Plot/label instruments to match other plot colors.
+
+    Parameters
+    ----------
+    ax
+        Axes to plot the BPCs on
+    df
+        Listing of BPCs
+    bpc_colors
+        Colors to apply to the BPCs
+    """
+    bpc = df[df["sensor"].str.startswith("BP")]
+    for _, row in bpc.iterrows():
+        color = bpc_colors[row["sensor"]]
+        ax.plot(row["easting"], row["northing"], "o", color=color)
+        ax.text(
+            row["easting"] + 2,
+            row["northing"],
+            row["sensor"],
+            color=color,
+            verticalalignment="center",
+            horizontalalignment="left",
+        )
+    return ax
+
+
+def plot_faults(
+    dxf: Path, ax: plt.Axes, edgecolor: str = "#666ddd", lw: float = 1.5, **kwargs
+):
+    """
+    Plot faults from a DXF file
+
+    Parameters
+    ----------
+    dxf
+        Path to the dxf containing the faults
+    ax
+        Axes to plot the faults on
+    edgecolor
+        Edge color to apply
+    lw
+        Line weight to apply
+
+    Other Parameters
+    ----------------
+    See matplotlib.patches.PathPatch
+    """
     faults = get_polylines(dxf, "faults")
-    _plot_paths(
-        faults, ax=ax, facecolor=facecolor, edgecolor=edgecolor, lw=lw, **kwargs
-    )
+    _plot_paths(faults, ax=ax, facecolor="none", edgecolor=edgecolor, lw=lw, **kwargs)
     return ax
 
 
 def plot_burst(
-    time,
-    burst_event_dxf,
-    burst_df,
-    color,
-    ax,
+    time: str,
+    burst_event_dxf: Path,
+    burst_df: pd.DataFrame,
+    color: str,
+    ax: plt.Axes,
+    lw: float = 2.5,
+    include_event: bool = True,
+    include_face: bool = True,
 ):
+    """
+    Plot the damage area, location, and face position for one of the damaging events
+
+    Parameters
+    ----------
+    time
+        Time of the event
+    burst_event_dxf
+        Path to the dxf containing the burst info
+    burst_df
+        Listing of the origin info for the damaging event(s)
+    color
+        Color for the event
+    ax
+        Axes to plot the event on
+    lw
+        Line weight for the face/damage area
+    include_event
+        Whether to include the dot representing the event origin
+    include_face
+        Whether to include the face position at the time of the event
+    """
+
     def _get_cached_or_parse(key):
         data = DXF_CACHE.get(key, None)
         if data is None:
@@ -198,29 +355,67 @@ def plot_burst(
             DXF_CACHE[key] = data
         return data
 
-    # Get & plot the face position
     date = time.split("T")[0]
-    fp = _get_cached_or_parse(f"{date}_face")
-    ax = _plot_paths(fp, ax=ax, edgecolor=color, facecolor="None", lw=3)
+
+    # Get & plot the face position
+    if include_face:
+        fp = _get_cached_or_parse(f"{date}_face")
+        _plot_paths(fp, ax=ax, edgecolor=color, facecolor="None", lw=lw)
 
     # Get & plot the damaged area
     dz = _get_cached_or_parse(f"{date}_damage")
-    ax = _plot_paths(dz, ax=ax, edgecolor=color, facecolor="None", lw=2.5)
+    _plot_paths(dz, ax=ax, edgecolor=color, facecolor="None", lw=lw)
 
     # Get and plot the event
-    df = burst_df.loc[
-        (burst_df["time"] > np.datetime64(time) - np.timedelta64(24, "h"))
-        & (burst_df["time"] <= np.datetime64(time) + np.timedelta64(24, "h"))
-    ]
-    ax = plot_events(df, c=color, ax=ax, s=magnitude_scaling(df))
+    if include_event:
+        df = burst_df.loc[
+            (burst_df["time"] > np.datetime64(time) - np.timedelta64(24, "h"))
+            & (burst_df["time"] <= np.datetime64(time) + np.timedelta64(24, "h"))
+        ]
+        ax = plot_events(df, c=color, ax=ax, s=magnitude_scaling(df))
 
+    return ax
+
+
+def plot_anomalous(
+    dxf: Path,
+    ax: plt.Axes,
+    facecolor: str = "none",
+    edgecolor: str = "#ff6600",
+    alpha: float = 1,
+    **kwargs,
+):
+    """
+    Plot the anomalous zones from geometry in a DXF
+
+    Parameters
+    ----------
+    dxf
+        Path to the DXF containing the anomalous zones
+    ax
+        Axes to plot the anomalous zones on
+    facecolor
+        Face color to apply to the anomalous zones
+    edgecolor
+        Edge color to apply to the anomalous zones
+    alpha
+        Transparency to apply to the anomalous zones
+
+    Other Parameters
+    ----------------
+    See matplotlib.patches.PathPatch
+    """
+    workings = get_polylines(dxf, "anomalous")
+    _plot_paths(
+        workings, ax=ax, facecolor=facecolor, edgecolor=edgecolor, alpha=alpha, **kwargs
+    )
     return ax
 
 
 # --- Plotting events and such
 
 
-def plot_events(
+def plot_events(  # TODO: Does this still get used? I know I had to rework pretty extensively.
     events: pd.DataFrame,
     ax: plt.Axes,
     s: float = 20,
@@ -347,8 +542,17 @@ def plot_stations(
 
 
 # --- More generic formatting stuff
-def magnitude_scaling(events, col="local_mag"):
-    """Create the dot size for plotting"""
+def magnitude_scaling(events: pd.DataFrame, col: str = "local_mag"):
+    """
+    Dot size for plotting events by magnitude
+
+    Parameters
+    ----------
+    events
+        Events to plot
+    col
+        Column representing the magnitude
+    """
     # Pretty arbitrary, but it seems to look nice at least for larger events
     return 2 ** (events[col] * 2) + 10
 
@@ -419,7 +623,85 @@ def plot_scale_bar(
     return asb
 
 
-def set_extents(ax, extents):
+def plot_north_arrow(
+    ax: plt.Axes,
+    x: float,
+    y: float,
+    arrow_length: float,
+    text_offset: float = 0.0,
+    color: str = "black",
+    zorder: int = 500,
+    **kwargs,
+):
+    """
+    Plot a North arrow
+
+    Parameters
+    ----------
+    ax
+        Axes to add the North arrow to
+    x
+        x-coordinate of the North arrow
+    y
+        y-coordinate of the North arrow
+    arrow_length
+        Length of the North arrow
+    text_offset
+        Distance to shift the "N" up
+    color
+        Edge color of the arrow
+    zorder
+        Rendering order. Typically want the arrow to render on top of everything else in the plot.
+
+    Returns
+    -------
+        The axes the arrow is plotted on
+    """
+    dx = 0
+    dy = arrow_length * 0.6
+    extra = arrow_length * 0.4
+    head_length = dy + extra  # A trick to hide the arrow's tail
+
+    properties = {
+        "head_width": 1.3 * dy,
+        "head_length": head_length,
+        "overhang": 0.3,
+        "length_includes_head": True,
+        "ec": color,
+        "zorder": zorder,
+    }
+
+    # Draw the arrow
+    ax.arrow(x, y, dx, dy, fc="white", shape="full", **properties, **kwargs)
+    # Add some depth...
+    ax.arrow(x, y, dx, dy, fc=color, shape="left", **properties, **kwargs)
+
+    # Add the 'N' text above the arrow
+    ax.text(
+        x,
+        y + head_length / 2 + text_offset,
+        "N",
+        ha="center",
+        va="bottom",
+        color=color,
+        zorder=zorder,
+    )
+
+
+def set_extents(
+    ax: plt.Axes,
+    extents: dict[str, list[float]],
+):
+    """
+    Set the plot extents and make the Axes look nice
+
+    Parameters
+    ----------
+    ax
+        Axes to tidy up
+    extents
+        Desired plot extents
+    """
     ax.set_xlim(extents["x"])
     ax.xaxis.set_visible(False)
 

@@ -4,48 +4,9 @@ Add the longwall information/extrapolations.
 
 import numpy as np
 import pandas as pd
+from elkcreek.longwall import get_longwall_positions, read_longwall_df
 
 import local
-
-
-def get_longwall_positions(times, lw_df, end_buffer=7) -> pd.DataFrame:
-    """
-    Get a dataframe of linearly extrapolated longwall positions.
-
-    Parameters
-    ----------
-    times
-        An array of datetime objects
-    lw_df
-        The dataframe which specifies the longwall position as a function
-        of time.
-    end_buffer
-        Number of days to add to end range for each panel. This allows events
-        Occurring slightly after panel has finished to still be attributed to
-        the final longwall position.
-    """
-    # init output
-    out_cols = ["headgate_x", "headgate_y", "tailgate_x", "tailgate_y", "panel"]
-    out = pd.DataFrame(columns=out_cols, index=times.index)
-    buff_dt = np.timedelta64(end_buffer, "D")
-
-    # iterate each panel, filter on events in panel range and extrapolate.
-    for panel, panel_df in lw_df.groupby("panel"):
-        min_time = panel_df["local_time"].values.min()
-        max_time = panel_df["local_time"].values.max() + buff_dt
-        in_panel_time = (times >= min_time) & (times <= max_time)
-        if not in_panel_time.sum():
-            continue
-        times_filtered = times[in_panel_time]
-        times_ns = times_filtered.astype(np.int64)
-        panel_times_ns = panel_df["local_time"].values.astype(np.int64)
-        for col in out_cols:
-            if col == "panel":
-                continue
-            interps = np.interp(times_ns, panel_times_ns, panel_df[col])
-            out.loc[times_filtered.index.values, col] = interps
-        out.loc[times_filtered.index.values, "panel"] = panel
-    return out
 
 
 def l2_normalize(array):
@@ -58,7 +19,7 @@ def l2_normalize(array):
 def add_distances(df, lw_df):
     """Add Shortest distance to the longwall (xy)"""
     # need to only use rows that have panel locations.
-    sub = df[~df["panel"].isnull()]
+    sub = df[~(df["panel"] == "")]
     # First get a df of the first longwall position in each panel.
     first_pan = lw_df.sort_values("local_time").groupby("panel").first()
     # Expand the first panel df.
@@ -159,9 +120,7 @@ def add_longwall_info(df, lw_df, time_column="local_time", spatial_columns=("x",
 
 def main():
     """Add the longwall distance/location."""
-    lw_df = pd.read_csv(local.longwall_position_path).assign(
-        local_time=lambda x: pd.to_datetime(x["local_date"])
-    )
+    lw_df = read_longwall_df(local.longwall_position_path)
     df = pd.read_parquet(local.cat_path_with_volumes)
     out = add_longwall_info(df, lw_df)
     out.to_parquet(local.cat_path_with_longwall)

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from string import capwords
 
 import numpy as np
 from matplotlib import gridspec
 from matplotlib import pyplot as plt
 from numpy.typing import NDArray
+from scipy.stats import binned_statistic_2d
 
 
 class Grid:
@@ -145,8 +147,6 @@ def plot_grid(
             are "nearest" for a solid color in each grid cell (default) or
             "gouraud" to apply Gouraud shading (see matplotlib docs).
     If contour=True
-        fontsize
-            The fontsize to apply to the contour labels. Default is 12.
         fmt
             The string formatting to apply to the contour labels. Default is "%2.2f".
         colors
@@ -205,13 +205,12 @@ def plot_grid(
             **kwargs,
         )
     else:
-        fontsize = kwargs.pop("fontsize", 12)
         fmt = kwargs.pop("fmt", "%2.2f")
         label_color = kwargs.pop("label_color", "k")
         cmesh = ax.contour(
             grid.grid_map[0], grid.grid_map[1], grid.data, alpha=alpha, **kwargs
         )
-        ax.clabel(cmesh, colors=label_color, fmt=fmt, fontsize=fontsize)
+        ax.clabel(cmesh, colors=label_color, fmt=fmt)
     # Make the plot look nice and add a legend
     ax.xaxis.tick_top()
 
@@ -226,3 +225,58 @@ def plot_grid(
     if flip_y:
         ax.set_ylim(ax.get_ylim()[::-1])
     return fig, ax
+
+
+def spatially_tabulate_data(
+    df: pd.DataFrame,
+    param: str,
+    lower_left: Sequence[float],
+    upper_right: Sequence[float],
+    spacing: float,
+    statistic: str = "sum",
+    log: bool = False
+) -> Grid:
+    """
+    Spatially tabulate data across a grid
+
+    Parameters
+    ----------
+    df
+        Input DataFrame
+    param
+        Column to tabulate
+    lower_left
+        Lower-left corner of the output Grid
+    upper_right
+        Upper-right corner of the output Grid
+    spacing
+        Spacing for the grid cells
+    statistic, optional
+        Statistic to use to tabulate the data. See scipy.stats.binned_statistic_2d.
+    log
+        Whether the output should be converted to log scale
+
+    Returns
+    -------
+    Grid containing the tabulated information
+    """
+    grid = Grid(
+        capwords(param.replace("_", " ")), lower_left, upper_right, spacing=spacing
+    )
+    df = df.loc[df[param].notnull()]
+    gridded = binned_statistic_2d(
+        df["x"],
+        df["y"],
+        df[param],
+        statistic=statistic,
+        bins=grid.header["num_gps"],
+        range=[
+            [lower_left[0] - spacing/2, upper_right[0] + spacing/2],
+            [lower_left[1] - spacing/2, upper_right[1] + spacing/2],
+        ],  # I'm pretty sure this is right and the type hint is wrong?
+    )
+    if log:
+        grid.data = np.log10(gridded.statistic)  # Same comment, unless they changed something?
+    else:
+        grid.data = gridded.statistic
+    return grid
