@@ -35,7 +35,7 @@ def panel_labels(ax):
     }
 
     ax.text(11000, 4770, "Panel 1", **text_props)
-    ax.text(10250, 5330, "Panel 2", **text_props)
+    ax.text(10270, 5328, "Panel 2", **text_props)
     ax.text(11925, 4900, "Panel 2b", **text_props)
     ax.text(10400, 5675, "Panel 3", **text_props)
     ax.text(11200, 5530, "Panel 3b", **text_props)
@@ -53,7 +53,7 @@ def event_labels(ax):
     ax.text(11580, 5550, "1", **text_props)
     ax.text(11550, 4950, "2", **text_props)
     ax.text(10800, 5550, "3", **text_props)
-    ax.text(11000, 6320, "4", **text_props)
+    ax.text(10650, 6220, "4", **text_props)
     ax.text(11500, 6150, "5", **text_props)
 
 
@@ -99,17 +99,16 @@ def sub_instrument_site_labels(ax):
 
 def burst_location_map(bursts):
     """Create the mine map with overburden, faults, and burst locations"""
+    fig, ax = plt.subplots(1 , figsize=(7, 4.6))
+
     ob_contours = [x * 100 for x in range(11)]
-    ob_plot_kwargs = {
-        "figsize": (7, 4.6),
-    }
-    fig, ax = plot_overburden(
+    plot_overburden(
         local.dxfs["overburden"],
         ob_contours,
         local.lower_left,
         local.upper_right,
         local.ob_grid_spacing,
-        plotting_kwargs=ob_plot_kwargs,
+        ax=ax,
     )
     plot_workings(local.dxfs["workings"], ax=ax)
     fill_mined_areas(local.dxfs["workings_simplified"], ax=ax)
@@ -177,9 +176,9 @@ def instrumentation_location_map(bursts, stations):
     return fig
 
 
-def event_2_instrument_location_map(bursts, inst_df):
+def sideD_instrument_map(bursts, inst_df):
     """Create a zoomed-in map around burst 2 showing cans/BPCs."""
-    fig, ax = plt.subplots(1, 1, figsize=(7, 7))
+    fig, ax = plt.subplots(1, 1, figsize=(3.5, 3))
     plot_workings(local.dxfs["workings"], ax=ax)
     plot_events(bursts, c="#999ccc", ax=ax, s=magnitude_scaling(bursts))
     plot_instrumentation_sites(
@@ -207,7 +206,7 @@ def event_2_instrument_location_map(bursts, inst_df):
     )
 
     plot_scale_bar(ax, **sb_params)
-    set_extents(ax, local.map_extents_event_2)
+    set_extents(ax, local.map_extents_siteD)
 
     return fig
 
@@ -228,8 +227,8 @@ def main():
     inst_map = instrumentation_location_map(bursts, stations)
     inst_map.savefig(local.station_map, **local.savefig_params)
 
-    siteD_inst_map = event_2_instrument_location_map(bursts, inst_df)
-    siteD_inst_map.savefig(local.siteD_inst_map)
+    siteD_inst_map = sideD_instrument_map(bursts, inst_df)
+    siteD_inst_map.savefig(local.siteD_inst_map, **local.savefig_params)
 
 
 if __name__ == "__main__":

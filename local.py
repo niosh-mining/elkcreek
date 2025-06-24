@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import seaborn as sns
 
 here = Path(__file__).absolute().parent
@@ -35,6 +36,7 @@ dxfs = {
     "damage": dxf_dir / "sig_events.dxf",
     "faults": dxf_dir / "faults.dxf",
     "instrumentation": dxf_dir / "ug_instrumentation.dxf",
+    "anomalous": dxf_dir / "anomalous_zones.dxf",
 }
 
 wkt_path = raw_data / "elk_creek_coordinates.wkt"
@@ -93,16 +95,17 @@ grond_report_path = here / "report"
 # --- Plot files
 plots = Path("plots")
 plots.mkdir(exist_ok=True)
-pairplots = plots / "source_parameter_pairplots"
-pre_filtering = pairplots / "pre_filtering"
-post_filtering = pairplots / "post_filtering"
 burst_map = plots / "p010_burst_events.png"
 station_map = plots / "p010_station_map.png"
 siteD_inst_map = plots / "p010_siteD_instrumentation.png"
-can_map = plots / "p010_can_map.png"
-omoris_plot_path = plots / "p020_aftershocks.png"
+# can_map = plots / "p010_can_map.png"
+mag_hist_path = plots / "p020_mag_hists.png"
+dot_map_path = plots / "p030_dot_map.png"
+spatial_event_count_all = plots / "p040_spatial_event_count_all.png"
+spatial_event_count_by_panel = plots / "p040_spatial_event_by_panel.png"
+omoris_plot_path = plots / "p050_aftershocks.png"
 
-inst_response_event_2_plot_path = plots / "p050_event_2_inst_response.png"
+inst_response_event_2_plot_path = plots / "p090_event_2_inst_response.png"
 
 moment_tensor_plot_path = plots / "d080_moment_tensor_plots"
 moment_tensor_plot_path.mkdir(exist_ok=True)
@@ -164,14 +167,42 @@ event_filter_params = dict(
 )
 
 # Parameters for outliers
+big_mag = 2
 outlier_params = dict(
     high_apparent_stress=1,  # MPa
     high_apparent_volume=10**8.5,  # m^3
     large_source_radius=700,  # m
-    big_local_mag=2,
+    big_local_mag=big_mag,
 )
 
+# Panel start and end dates
+panel_dates = pd.DataFrame({
+    "panel1": ["2009-11-02", "2010-05-26"],
+    "p1_break": ["2010-05-26", "2010-08-24"],
+    "panel2": ["2010-08-24", "2011-02-18"],  # It's technically 2025-03-25, but in that time they mined just to the next crosscut to recover from the burst
+    "p2_break": ["2011-02-18", "2011-04-06"],
+    "panel2b": ["2011-04-06", "2011-06-21"],
+    "p2b_break": ["2011-06-21", "2011-07-09"],
+    "panel3": ["2011-07-09", "2011-10-19"],  # Same story as Panel 2.. actual end date is 2011-11-28
+    "p3_break": ["2011-10-19", "2012-02-17"],
+    "panel3b": ["2012-02-17", "2012-05-23"],
+    "p3b_break": ["2012-05-23", "2012-06-11"],
+    "panel4": ["2012-06-11", "2012-09-11"],
+    "p4_break": ["2012-09-11", "2012-09-26"],
+    "panel4b": ["2012-09-26", "2013-01-03"],
+    "post_mining": ["2013-01-03", "2014-05-14"],
+}, index=["start", "end"]).T
+
+
 # For plotting
+
+font_sizes = {
+    "default": 11.5,  # This should apply to the subplot labels, I think...
+    "fontsize": 10.5,  # Size of general text
+    "titlesize": 11.5,  # Size of plot/subplot titles
+    "ticksize": 9,  # Size of tick labels
+}
+
 color_palette = sns.xkcd_palette(
     [
         "purple",
@@ -182,7 +213,8 @@ color_palette = sns.xkcd_palette(
         "orange yellow",
     ]
 )
-burst_colors = {x: y for x, y in zip(burst_times, color_palette.as_hex())}
+cp_hex = color_palette.as_hex()
+burst_colors = {x: y for x, y in zip(burst_times, cp_hex)}
 
 scale_bar_defaults = {
     "dist": 500,
@@ -228,12 +260,25 @@ map_extents = {
 }
 map_extents_zoomed = {
     "x": [9700, 12800],
-    "y": [4500, 6500],
+    "y": [4350, 6350],
     "z": [1500, 2300],
 }
-map_extents_event_2 = {
+map_extents_event2 = {
+    "x": [10682, 12063],
+    "y": [4034, 5339],
+    "z": [1500, 2300],
+}
+map_extents_siteD = {
     "x": [11600, 11775],
     "y": [4700, 4825],
+}
+face_centered_extents = {
+    "x": [-500, 500],
+    "y": [-1000, 750],
+}
+face_centered_extents_zoomed = {
+    "x": [-500, 500],
+    "y": [-500, 500],
 }
 
 
@@ -288,7 +333,8 @@ EVENT_ELEVATION_RANGE = (SHIFTED_COAL_SEAM_DEPTH + 200, SHIFTED_COAL_SEAM_DEPTH 
 coal_normal_azimuth = 14
 coal_normal_plunge = 88
 
-# Plotting grid
-spacing = 100  # m
+# Plotting grid(s)
+ob_grid_spacing = 100  # m
+stat_grid_spacing = 50  # m
 lower_left = [map_extents_zoomed["x"][0], map_extents_zoomed["y"][0]]
 upper_right = [map_extents_zoomed["x"][1], map_extents_zoomed["y"][1]]

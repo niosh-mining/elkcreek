@@ -75,9 +75,14 @@ class Grid:
             )
         self.data = data
 
-    def plot(self, **kwargs) -> tuple[plt.Figure, plt.Axes]:
+    def plot(self, ax, **kwargs) -> plt.Axes:
         """
-        Plot a 2D grid
+        Plot a 2D
+
+        Parameters
+        ----------
+        ax
+            The Axes to plot the grid on. (Would be good to add the ability to create a new figure... it would be relatively trivial)
 
         Other Parameters
         ----------------
@@ -105,14 +110,16 @@ class Grid:
         matplotlib Axes
             Axes containing the resultant plot
         """
-        return plot_grid(self, **kwargs)
+        return plot_grid(self, ax, **kwargs)
 
 
 def plot_grid(
     grid: Grid,
+    ax: plt.Axes,
     contour: bool = False,
     flip_x: bool = False,
     flip_y: bool = False,
+    cbar_ax: plt.Axes | str | None = None,
     **kwargs,
 ) -> tuple[plt.Figure, plt.Axes]:
     """
@@ -122,6 +129,8 @@ def plot_grid(
     ----------
     grid
         The Grid to plot
+    ax
+        The axes to put the plot on
     contour
         Flag indicating whether to plot contour lines instead of a colormap
         (default=False).
@@ -129,17 +138,19 @@ def plot_grid(
         If True, flip the limits on the x-axis to go from highest to lowest
     flip_y
         If True, flip the limits on the y-axis to go from highest to lowest
+    cbar_ax
+        Axes to add a colorbar to. If None, don't use a colorbar. If "same",
+        then use the same axes as the gridplot itself. Otherwise, should be
+        the actual Axes to add the colorbar to.
 
     Other Parameters
     ----------------
-    figsize
-        Size of the figure. Default is (9, 9)
     cmap
         Colormap to use for displaying grid values. Default is "rainbow".
     alpha
         Transparency value for the colormap. Default is 0.5.
-    legend_label
-        Label to display on the colorbar. Default is "Value".
+    cbar_params
+        Parameters to pass to the colorbar
 
     If contour=False:
         shading
@@ -164,7 +175,6 @@ def plot_grid(
     matplotlib Axes
         Axes containing the resultant plot
     """
-    figsize = kwargs.pop("figsize", (9, 9))
     if "colors" in kwargs:
         if not contour:
             raise ValueError("'colors' is not a valid option if contour=False")
@@ -172,27 +182,17 @@ def plot_grid(
             raise ValueError("Cannot specify both 'colors' and 'cmap'")
     else:
         cmap = kwargs.pop("cmap", "rainbow")
-        kwargs["cmap"] = (
-            cmap  # This is getting a little uglier than I would like, but necessary for flexibility
-        )
+        # This is getting a little uglier than I would like, but necessary for flexibility
+        kwargs["cmap"] = cmap
     alpha = kwargs.pop("alpha", 0.5)
-    legend_label = kwargs.pop("legend_label", "Value")
     shading = kwargs.pop("shading", "nearest")
-    colorbar = kwargs.pop("colorbar", True)
+    # Need to do this whether or not a colorbar is used because the kwargs are a little bit messy...
+    cbar_params = {
+            "orientation": "horizontal",
+            "label": grid.header["label"],
+        }
+    cbar_params.update(kwargs.pop("cbar_params", {}))
 
-    fig = plt.figure(figsize=figsize)
-
-    # Define the plot grid and create a new axes
-
-    gs = gridspec.GridSpec(
-        nrows=2,
-        ncols=2,
-        width_ratios=[10, 0.5],
-        height_ratios=[10, 0.5],
-        wspace=0.05,
-        hspace=0.05,
-    )
-    ax = fig.add_subplot(gs[0])
 
     # Plot the grid with the appropriate user args
     if not contour:
@@ -213,10 +213,11 @@ def plot_grid(
         ax.clabel(cmesh, colors=label_color, fmt=fmt)
     # Make the plot look nice and add a legend
     ax.xaxis.tick_top()
-
-    if colorbar:
-        ax2 = fig.add_subplot(gs[2])
-        fig.colorbar(cmesh, cax=ax2, orientation="horizontal", label=legend_label)
+    if cbar_ax is not None:
+        if cbar_ax == "same":
+            plt.colorbar(cmesh, ax=ax, **cbar_params)
+        else:
+            plt.colorbar(cmesh, cax=cbar_ax, **cbar_params)
 
     # Make the plot look nice
     ax.set_aspect("equal")
@@ -224,7 +225,7 @@ def plot_grid(
         ax.set_xlim(ax.get_xlim()[::-1])
     if flip_y:
         ax.set_ylim(ax.get_ylim()[::-1])
-    return fig, ax
+    return ax
 
 
 def spatially_tabulate_data(

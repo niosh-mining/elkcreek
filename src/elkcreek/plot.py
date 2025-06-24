@@ -11,17 +11,18 @@ import numpy as np
 import pandas as pd
 import pyrocko
 import seaborn as sns
-from matplotlib import dates as mdates
+import matplotlib.dates as mdates
+import matplotlib.colors as mcolors
 from matplotlib.contour import QuadContourSet
 from matplotlib.font_manager import FontProperties
 from matplotlib.patches import PathPatch, Polygon
-from matplotlib.path import PPath
+from matplotlib.path import Path as PPath
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from pyrocko.moment_tensor import MomentTensor
 from pyrocko.plot import beachball, mpl_color
 
 from elkcreek.dxf import DXF_CACHE, build_and_cache_topo, get_polylines, make_paths
-from elkcreek.grid import Grid
+from elkcreek.grid import Grid, spatially_tabulate_data
 from elkcreek.mt import crack_decomposition, project
 
 LABEL_MAPPING = {
@@ -72,9 +73,10 @@ def plot_overburden(
     lower_left: tuple[float, float],
     upper_right: tuple[float, float],
     spacing: float,
+    ax: plt.Axes,
     gridding_kwargs: dict | None = None,
     plotting_kwargs: dict | None = None,
-) -> tuple[plt.Figure, plt.Axes]:
+) -> plt.Axes:
     """
     Create a figure containing overburden contours
 
@@ -90,6 +92,8 @@ def plot_overburden(
         Coordinate of the upper-right corner of the plot extents
     spacing
         Spacing of the grid to use for interpolating the overburden contours
+    ax
+        The axes to add the plot to
     gridding_kwargs, optional
         Keyword arguments to pass to elkcreek.dxf.build_and_cache_topo
     plotting_kwargs, optional
@@ -105,12 +109,12 @@ def plot_overburden(
         dxf, "overburden", lower_left, upper_right, spacing, **grid_params
     )
     plotting_kwargs = plotting_kwargs or {}
-    return contourplot(grid=ob, levels=contours, **plotting_kwargs)
+    return contourplot(grid=ob, levels=contours, ax=ax, **plotting_kwargs)
 
 
 def contourplot(
-    grid: Grid, levels: list[float] | list[int], **kwargs
-) -> tuple[plt.Figure, plt.Axes]:
+    grid: Grid, levels: list[float] | list[int], ax: plt.Axes, **kwargs
+) -> plt.Axes:
     """
     Create a contour plot from a Grid of data
 
@@ -120,16 +124,18 @@ def contourplot(
         Grid containing the data of interest
     levels
         The contour levels to use
+    ax
+        The Axes to add the plot to
 
     Returns
     -------
-        The newly created figure and Axes
+        The Axes the plot was added to
     """
-    fig, ax = grid.plot(
+    ax = grid.plot(
+        ax=ax,
         contour=True,
-        colors=["#aa0000", "#888888", "#888888"],
+        colors=["#aa0000", "#777777", "#777777"],
         levels=levels,
-        colorbar=False,
         **kwargs,
     )
     contours: QuadContourSet = [
@@ -137,7 +143,30 @@ def contourplot(
     ][0]
     for x in contours.labelTexts:
         x.set_text(int(float(x.get_text())))
-    return fig, ax
+    return ax
+
+
+def gridplot(
+    ax,
+    df,
+    lower_left,
+    upper_right,
+    spacing,
+    statistic,
+    param,
+    cbar_ax="same",
+    cbar_label=None,
+    cmap="afmhot_r",
+    alpha=1,
+    log=False,
+    **kwargs,
+):
+    grid = spatially_tabulate_data(df, param, lower_left, upper_right, spacing, statistic=statistic, log=log)
+    if cbar_label is not None:
+        grid.header["label"] = cbar_label
+
+    ax = grid.plot(ax, cbar_ax=cbar_ax, cmap=cmap, alpha=alpha, **kwargs)
+    return ax, grid
 
 
 # --- Plotting dxf elements
@@ -710,6 +739,22 @@ def set_extents(
 
     ax.set_aspect("equal")
 
+
+# --- things to make custom color bars slightly easier
+def date_normalizer(times):
+    """Return a normalizer that will map a list of dates to something that a matplotlib colormap can accept"""
+    # Set up the normalizer
+    dates = mdates.date2num(times)
+    norm = mcolors.Normalize(vmin=dates.min(), vmax=dates.max())
+    return norm
+
+
+def viridis_cmap(times, normalizer):
+    """ Map a list of dates to the viridis colormap """
+    return plt.cm.viridis(normalizer(mdates.date2num(times)))
+
+
+# --- Moment tensors
 
 @dataclass
 class MomentTensorCDCPlotter:
