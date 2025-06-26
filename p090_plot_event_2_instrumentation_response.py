@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from elkcreek.util import convert_timezone
+from elkcreek.plot import configure_font_sizes
 
 import local
 
@@ -26,7 +27,7 @@ can_shifts = {
     "I": _shift_small,
     "J": _shift_small,
 }
-can_colors = {"d2": "tab:blue", "d1": "tab:orange"}
+can_colors = {"d2": local.cp_hex[1], "d1": local.cp_hex[-1]}
 
 
 def filter_date(df, t1=local.inst_time_range[0], t2=local.inst_time_range[-1]):
@@ -52,7 +53,7 @@ def prep_ax(ax, label):
     """Prepare the plotting axis."""
     # Add subplot label
     ax.text(
-        0.03, 1.17, label, transform=ax.transAxes, fontsize=11, va="top", ha="right"
+        0.03, 1.17, label, transform=ax.transAxes, va="top", ha="right"
     )
 
 
@@ -129,11 +130,14 @@ def plot_can_displacement(ax, df, burst_time):
 
     ax.legend(loc="lower left")
     ax.set_ylabel("Displacement (cm)")
-    ax.set_xlabel("Days from Event")
+    ax.set_xlabel("Days from Event 2")
 
 
 def main():
     """Plot the event pressure response."""
+
+    configure_font_sizes(local.font_sizes)
+
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, figsize=(3.5, 5.1))
     burst_time_utc = np.datetime64(local.burst_times[1])
     burst_time_local = convert_timezone(burst_time_utc, "UTC", "US/Mountain")
@@ -148,15 +152,15 @@ def main():
     ]
     df_disp = pd.read_parquet(local.extracted_can_disp_path)
     plot_bpc(ax1, df_bpc, burst_time_local)
-    ax1.set_title("BPC Pressure", fontdict={"fontsize": 10.0})
+    ax1.set_title("BPC Pressure")
     plot_can_load(ax2, df_can, burst_time_local)
-    ax2.set_title("Can Load", fontdict={"fontsize": 10.0})
+    ax2.set_title("Can Load")
     plot_can_displacement(ax3, df_disp, burst_time_local)
-    ax3.set_title("Convergence", fontdict={"fontsize": 10.0})
+    ax3.set_title("Convergence")
 
     plt.subplots_adjust(hspace=0.3)
     plt.tight_layout()
-    fig.savefig(local.inst_response_event_2_plot_path, transparent=True)
+    fig.savefig(local.inst_response_event_2_plot_path, **local.savefig_params)
 
 
 if __name__ == "__main__":

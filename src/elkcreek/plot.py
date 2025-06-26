@@ -781,9 +781,9 @@ class MomentTensorCDCPlotter:
         self,
         ax: None | plt.Axes = None,
         color="black",
-        fontsize=12,
         linewidth=1.5,
         alpha=0.75,
+        marker_scale_factor=12,
         label_source_type=True,
     ):
         """
@@ -831,7 +831,7 @@ class MomentTensorCDCPlotter:
             color=color,
         )
 
-        d = fontsize / 3.0
+        d = marker_scale_factor / 3.0
         for txt, pos, off, va, ha in [
             ("+ISO", (0.0, 1.0), (-d, d), "bottom", "center"),
             ("-ISO", (0.0, -1.0), (d, -d), "top", "center"),
@@ -839,7 +839,7 @@ class MomentTensorCDCPlotter:
             ("+CLVD", (-1.0, 0.0), (-d, d), "bottom", "right"),
         ]:
             ax.plot(
-                pos[0], pos[1], "o", color=color, alpha=alpha, markersize=fontsize / 4.0
+                pos[0], pos[1], "o", color=color, alpha=alpha, markersize=marker_scale_factor / 4.0
             )
             if label_source_type:
                 ax.annotate(
@@ -860,7 +860,7 @@ class MomentTensorCDCPlotter:
             ("+Crack", (-4.0 / 9.0, 5.0 / 9.0), (-d, d), "bottom", "right"),
         ]:
             ax.plot(
-                pos[0], pos[1], "o", color=color, alpha=alpha, markersize=fontsize / 4.0
+                pos[0], pos[1], "o", color=color, alpha=alpha, markersize=marker_scale_factor / 4.0
             )
             if label_source_type:
                 ax.annotate(
@@ -1012,7 +1012,7 @@ class MomentTensorCDCPlotter:
         cdc_str = f"Crack: {per_str(ratio_cdc_crush)} DC: {per_str(ratio_cdc_dc)}"
         # text = stand_decomp_str + "\n" + cdc_str
         text = cdc_str
-        ax.text(position[0], position[1], text, ha="center", va="top", fontsize=10)
+        ax.text(position[0], position[1], text, ha="center", va="top")
 
     def plot_subplot_labels(self, ax):
         """Add the labels for subplots."""

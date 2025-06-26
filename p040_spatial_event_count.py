@@ -5,7 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 
-from elkcreek.plot import gridplot, plot_workings, plot_burst, plot_faults, plot_scale_bar, set_extents
+from elkcreek.plot import gridplot, plot_workings, plot_burst, plot_faults, plot_anomalous, plot_scale_bar, set_extents
 
 import local
 
@@ -18,7 +18,9 @@ def spatial_event_count(
     simplified_workings: bool = False,
     vmax: float | None = None,
     scale_bar_params: dict[str, Any] = local.scale_bar_defaults,
-    cbar_ax: plt.Axes | str | None = "same"
+    cbar_ax: plt.Axes | str | None = "same",
+    show_anomalous: bool = True,
+    show_burst_face: bool = True,
 ):
     """ Plot a count of events across a spatial grid """
 
@@ -48,7 +50,9 @@ def spatial_event_count(
     for time in bursts.time:
         # Grab the key for the dxf file...
         time = str(time).replace(" ", "T").split(".")[0]
-        plot_burst(time, local.dxfs["damage"], bursts, color, ax=ax, lw=1.5, include_event=False)
+        plot_burst(time, local.dxfs["damage"], bursts, color, ax=ax, lw=1.5, include_event=False, include_face=show_burst_face)
+    if show_anomalous:
+        plot_anomalous(local.dxfs["anomalous"], ax=ax, edgecolor=local.cp_hex[2], alpha=1, lw=1.5)
     # Make it look nice
     plot_scale_bar(ax, **scale_bar_params)
     set_extents(ax, extents)
@@ -133,7 +137,7 @@ def spatial_count_version2(df, burst_df):
 
 def main():
     # Load data
-    df = pd.read_parquet(local.cat_path_with_longwall)
+    df = pd.read_parquet(local.final_catalog)
     burst_df = pd.read_csv(local.burst_events, parse_dates=["time"])
 
     # Plot the original version of the figure

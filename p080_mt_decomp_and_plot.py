@@ -5,13 +5,15 @@ Note: Alex Rigby from IMS provided much of this code.
 """
 
 from elkcreek.grond import read_resulting_events
-from elkcreek.plot import MomentTensorCDCPlotter
+from elkcreek.plot import MomentTensorCDCPlotter, configure_font_sizes
 
 import local
 
 
 def main():
     """Get resulting moment tensors."""
+    configure_font_sizes(local.font_sizes)
+
     base_path = local.moment_tensor_plot_path
     best = read_resulting_events(local.grond_report_path, "best")
     ensemble = read_resulting_events(local.grond_report_path, "ensemble")

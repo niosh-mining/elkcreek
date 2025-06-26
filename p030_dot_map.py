@@ -83,7 +83,7 @@ def face_centered_plot(events, ax, normalizer, bursts):
 
 def main():
     # Load the data
-    df = pd.read_parquet(local.cat_path_with_longwall)
+    df = pd.read_parquet(local.final_catalog)
     burst_df = pd.read_csv(local.burst_events, parse_dates=["time"])
 
     configure_font_sizes(local.font_sizes)

@@ -10,6 +10,8 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import curve_fit
 
+from elkcreek.plot import configure_font_sizes
+
 import local
 
 
@@ -79,17 +81,18 @@ def fit_omori(df, event_time):
     cum = np.arange(len(time_after_event))
 
     out = curve_fit(omori_cumulative, time_after_event, cum)
-    out = {"k": out[0][0], "c": out[0][1]}  # "p": out[0][2]}
+    out = {"k": out[0][0], "c": out[0][1], "sigma": np.sqrt(np.diag(out[1]))}
 
     return out
 
 
-def plot_omori(ax, df, event_time, params):
+def plot_omori(ax, df, event_time, params, sigma):
     """Plot omori's curve."""
     t_rel = pd.to_datetime(df["time"]).values - pd.to_datetime(event_time).to_numpy()
     after_event = t_rel > np.timedelta64(0)
     time_after_event = t_rel[after_event] / np.timedelta64(1, "h")
     start_count = len(df) - len(time_after_event)
+
 
     predicted = omori_cumulative(time_after_event, **params)
     time_to_plot = df[after_event]["days_from_event"]
@@ -102,18 +105,26 @@ def plot_omori(ax, df, event_time, params):
         alpha=0.45,
         lw=2.5,
     )
+    txt = ax.text(
+        0.02,
+        0.96,
+        f"k:{int(round(params['k']))}({sigma[0]:0.1f}) c:{params['c']:0.1f}({sigma[1]:0.2f})",
+        ha="left",
+        va="top",
+        transform=ax.transAxes,
+        fontsize=local.font_sizes["ticksize"],  # Make sure to use the smaller font for this
+    )
+    print(txt.get_font_properties().get_stretch())
 
 
-def set_title(ax, sub_time_df, fit_params, label):
+def set_title(ax, sub_time_df, label):
     """Create/set title."""
     # create the title
     mag = sub_time_df["local_mag"].max()
     title = (
         f"{label.title().replace("_", " ")} (M={mag:.1f}) "
-        f"c:{fit_params['c']:0.1f} "
-        f"k:{int(np.round(fit_params['k']))}"
     )
-    ax.set_title(title, fontdict={"fontsize": 10.0})
+    ax.set_title(title)
     return ax
 
 
@@ -134,7 +145,7 @@ def rectify_y_axis(axes):
     min_val = min([x[0] for x in ylims])
     max_val = max([x[1] for x in ylims])
     for ax in axes:
-        ax.set_ylim(min_val, max_val)
+        ax.set_ylim(min_val, max_val + 0.8)  # Add a buffer to the max to give room for the plot label
 
 
 def add_subplot_labels(axes):
@@ -142,22 +153,31 @@ def add_subplot_labels(axes):
     for ax, letter in zip(axes, ascii_lowercase):
         label = f"({letter})"
         ax.text(
-            0.03, 1.17, label, transform=ax.transAxes, fontsize=11, va="top", ha="right"
+            -0.05, 1.17, label, transform=ax.transAxes, va="top", ha="right"
         )
 
 
 def main():
     """Make plots of the aftershock from bursts, plot omoris."""
+
+    # Standardize the fonts
+    configure_font_sizes(local.font_sizes)
+
+    # Get the colors corresponding to each burst
     event_times_utc = [
         (t, f"event_{num + 1}") for num, t in enumerate(local.burst_times)
     ][1:-1]
 
     event_colors = [local.burst_colors[x[0]] for x in event_times_utc]
 
+    # Load data
     df = pd.read_parquet(local.final_catalog)
+
+    # Prep figure
     fig, axes = get_fig_axes(len(event_times_utc))
     twin_axes = [x.twinx() for x in axes]
 
+    # Do the plots
     zip_iter = zip(event_times_utc, axes, twin_axes, event_colors)
     for (etime_str, label), ax, twin_ax, color in zip_iter:
         event_time = pd.to_datetime(etime_str).to_numpy()
@@ -170,16 +190,16 @@ def main():
         plot_mag_ts(ax, twin_ax, sub_time_df, color)
 
         fit_params = fit_omori(sub_time_df, event_time)
-        print(fit_params)
-        plot_omori(twin_ax, sub_time_df, event_time, fit_params)
-        set_title(ax, sub_time_df, fit_params, label)
+        sigma = fit_params.pop("sigma")
+        plot_omori(twin_ax, sub_time_df, event_time, fit_params, sigma)
+        set_title(ax, sub_time_df, label)
 
     set_ylabels(axes, twin_axes)
     rectify_y_axis(axes)
     rectify_y_axis(twin_axes)
     fig.tight_layout(w_pad=0.2)
     add_subplot_labels(axes)
-    fig.savefig(local.omoris_plot_path, transparent=True, dpi=300)
+    fig.savefig(local.omoris_plot_path, **local.savefig_params)
 
 
 if __name__ == "__main__":

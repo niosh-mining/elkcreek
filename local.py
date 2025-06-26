@@ -104,7 +104,8 @@ dot_map_path = plots / "p030_dot_map.png"
 spatial_event_count_all = plots / "p040_spatial_event_count_all.png"
 spatial_event_count_by_panel = plots / "p040_spatial_event_by_panel.png"
 omoris_plot_path = plots / "p050_aftershocks.png"
-
+e2_panel1_events_path = plots / "p060_e2_panel1_seismic_progression.png"
+e2_panel2_events_path = plots / "p070_panel2_seismicity.png"
 inst_response_event_2_plot_path = plots / "p090_event_2_inst_response.png"
 
 moment_tensor_plot_path = plots / "d080_moment_tensor_plots"
@@ -193,6 +194,27 @@ panel_dates = pd.DataFrame({
     "post_mining": ["2013-01-03", "2014-05-14"],
 }, index=["start", "end"]).T
 
+# Panel 1 face positions of interest
+p1_face_pos = pd.DataFrame([
+    [10905.5, 4828.2, 10845.2, 4596.6],
+    [11082.6, 4782.0, 11022.3, 4550.5],
+    [11259.7, 4735.9, 11199.4, 4504.3],
+    [11436.8, 4689.7, 11376.5, 4458.2],
+    [11613.9, 4643.6, 11553.6, 4412.1],
+    [11791.0, 4597.5, 11730.7, 4365.9],
+], columns=["headgate_x", "headgate_y", "tailgate_x", "tailgate_y"])
+
+# Panel 2 face positions of interest
+panel2_anomalous_event2 = pd.Series({
+    "headgate_x": 11301.48,
+    "headgate_y": 5111.04,
+    "tailgate_x": 11238.04,
+    "tailgate_y": 4867.52,
+})
+p2_face_start = pd.Timestamp("2011-01-17")
+p2_face_end = pd.Timestamp("2011-02-17T22:00")
+p2_time_series_start = p2_face_start
+p2_time_series_end = pd.Timestamp("2011-02-24")
 
 # For plotting
 
@@ -229,23 +251,11 @@ scale_bar_defaults = {
 }
 
 bpc_colors = {
-    "BP1": "tab:blue",
-    "BP2": "tab:orange",
-    "BP3": "tab:green",
+    "BP1": cp_hex[0],
+    "BP2": cp_hex[2],
+    "BP3": cp_hex[4],
 }
 
-can_colors = {
-    "A": "tab:blue",
-    "B": "tab:orange",
-    "C": "tab:green",
-    "D": "tab:red",
-    "E": "tab:purple",
-    "F": "tab:brown",
-    "G": "tab:pink",
-    "H": "tab:gray",
-    "I": "tab:olive",
-    "J": "tab:cyan",
-}
 
 savefig_params = {
     "bbox_inches": "tight",
