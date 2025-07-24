@@ -1046,6 +1046,4 @@ class MomentTensorCDCPlotter:
         )
         self.plot_subplot_labels(hud_ax)
 
-        plt.show()
-
         return fig
