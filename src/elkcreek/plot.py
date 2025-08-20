@@ -42,7 +42,7 @@ LABEL_MAPPING = {
     "source_radius": "Source Radius (m)",
     "static_stress_drop": "Static Stress Drop (Pa)",
     "dynamic_stress_drop": "Dynamic Stress Drop (Pa)",
-    "num_sensors_used": "Number of Sensors Used",
+    "num_sensors_used": "Number of Sensors Used in Processing",
     "rupture_velocity": "Rupture Velocity (m/s?)",
 }
 

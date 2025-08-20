@@ -36,6 +36,10 @@ def filter_date(df, t1=local.inst_time_range[0], t2=local.inst_time_range[-1]):
     return df[(time >= t1) & (time <= t2)]
 
 
+def get_relative_time(times, ref_time):
+    return (times - ref_time) / np.timedelta64(1, "D")
+
+
 def plot_bpc(ax, df, burst_time):
     """Plot bpc data."""
     for name, sub in df.groupby("name"):
@@ -43,7 +47,7 @@ def plot_bpc(ax, df, burst_time):
         sub = sub.loc[local.inst_time_range[0] : local.inst_time_range[-1]] / 1e6
         sub = sub - np.nanmin(sub)  # Normalize to pre-burst pressure.
         color = local.bpc_colors[name]
-        x_axis = (sub.index.values - burst_time) / np.timedelta64(1, "D")
+        x_axis = get_relative_time(sub.index.values, burst_time)
         ax.plot(x_axis, sub.values, label=name, color=color)
     ax.legend()
     ax.set_ylabel("Pressure (MPa)")
@@ -76,7 +80,7 @@ def plot_can_load(ax, df, burst_time):
         time = time[in_time]
         load = (sub.values / 1.102)[in_time]
         load = load - np.nanmin(load)  # normalize to pre-burst pressure.
-        x_axis = (time - burst_time) / np.timedelta64(1, "D")
+        x_axis = get_relative_time(time, burst_time)
         ser = pd.Series(data=load, index=x_axis)
         ser.name = name
         group = group_key[name]
@@ -133,6 +137,18 @@ def plot_can_displacement(ax, df, burst_time):
     ax.set_xlabel("Days from Event 2")
 
 
+def prep_and_add_event_count(eve, burst_time, axes):
+    eve = eve.loc[(eve.local_time >= local.inst_time_range[0]) & (eve.local_time <= local.inst_time_range[-1])]
+    eve = eve[eve["vsa_event_2"]]  # Filter on the event's subvolume (to match the Omori plot)
+    x = get_relative_time(eve.local_time, burst_time)
+    y = np.cumsum([1] * len(eve))
+    for ax in axes:
+        rax = ax.twinx()
+        rax.plot(x, y, c="grey", ls=":", zorder=1)
+        rax.set_ylabel("Event Count")
+
+
+
 def main():
     """Plot the event pressure response."""
 
@@ -140,7 +156,7 @@ def main():
 
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, figsize=(3.5, 5.1))
     burst_time_utc = np.datetime64(local.burst_times[1])
-    burst_time_local = convert_timezone(burst_time_utc, "UTC", "US/Mountain")
+    burst_time_local = convert_timezone(burst_time_utc, "UTC", local.time_zone)
 
     prep_ax(ax1, "(a)")
     prep_ax(ax2, "(b)")
@@ -157,6 +173,11 @@ def main():
     ax2.set_title("Can Load")
     plot_can_displacement(ax3, df_disp, burst_time_local)
     ax3.set_title("Convergence")
+
+    # Add the event count to the Can Load and Convergence plots
+    df_eve = pd.read_parquet(local.final_catalog)
+    prep_and_add_event_count(df_eve, burst_time_local,[ax2, ax3])
+
 
     plt.subplots_adjust(hspace=0.3)
     plt.tight_layout()
