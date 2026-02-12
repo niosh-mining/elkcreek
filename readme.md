@@ -10,6 +10,8 @@ uv run make.py
 
 make.py runs all of the scripts that make up the data processing. The scripts are numbered alphanumerically in the order that they should be run in. Output data are written data/derived or and plots are output to the plots folder. All outputs are prefixed with the same alphanumeric identifier as the script used to generate them.
 
+Details about the data itself can be found [here](https://github.com/niosh-mining/elkcreek/tree/main/data/raw).
+
 Scripts starting with "a" relate to seismic event catalog generation.
 - a010_combine_catalogs.py combines the original (JMTS) and BEMIS catalogs, giving preference to the BEMIS catalog.
 - a020_filter_events.py applies quality control filtering to the catalog.
