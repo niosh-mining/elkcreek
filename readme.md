@@ -1,6 +1,10 @@
 # ElkCreek
 
-This repo houses the data and code that accompany a manuscript on the Elk Creek mine: {insert citation here once it becomes available}.
+This repo houses the data and code that accompany the journal article titled "Coal Bursting at the Elk Creek Mine: A Western United States Case Study": 
+
+Boltz MS, Chambers DJA, Larson MK, Lawson HE, Törnman W \[2026]. Coal Bursting at the Elk Creek Mine: A Western United States Case Study. Mining, Metallurgy & Exploration, https://doi.org/10.1007/s42461-026-01497-0.
+
+---
 
 To reproduce the figures from the paper, [install uv](https://docs.astral.sh/uv/getting-started/installation/) and, while in the elkcreek directory run:
 
