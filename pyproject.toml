@@ -7,7 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "numpy",
     "scipy",
-    "pandas",
+    "pandas>=3",
     "matplotlib",
     "seaborn",
     "pyarrow",
