@@ -1,4 +1,6 @@
-""" Functions for working with the longwall data """
+"""Functions for working with the longwall data"""
+
+from __future__ import annotations
 
 from pathlib import Path
 
@@ -6,7 +8,9 @@ import numpy as np
 import pandas as pd
 
 
-def get_longwall_positions(times: pd.Series, lw_df: pd.DataFrame, end_buffer: int = 7) -> pd.DataFrame:
+def get_longwall_positions(
+    times: pd.Series, lw_df: pd.DataFrame, end_buffer: int = 7
+) -> pd.DataFrame:
     """
     Get a dataframe of linearly extrapolated longwall positions.
 
@@ -27,7 +31,7 @@ def get_longwall_positions(times: pd.Series, lw_df: pd.DataFrame, end_buffer: in
     Dataframe of longwall positions
     """
     # init output
-    out_cols = {  # Need to explicitly set the dtypes because pandas is obnoxious otherwise
+    out_cols = {  # Explicitly set the dtypes because pandas is obnoxious otherwise
         "headgate_x": np.float64,
         "headgate_y": np.float64,
         "tailgate_x": np.float64,
@@ -45,8 +49,10 @@ def get_longwall_positions(times: pd.Series, lw_df: pd.DataFrame, end_buffer: in
         if not in_panel_time.sum():
             continue
         times_filtered = times[in_panel_time]
-        times_ns = times_filtered.astype(np.int64)
-        panel_times_ns = panel_df["local_time"].values.astype(np.int64)
+        times_ns = times_filtered.astype("datetime64[ns]").astype(np.int64)
+        panel_times_ns = (
+            panel_df["local_time"].astype("datetime64[ns]").astype(np.int64).values
+        )
         for col in out_cols:
             if col == "panel":
                 continue
@@ -58,9 +64,7 @@ def get_longwall_positions(times: pd.Series, lw_df: pd.DataFrame, end_buffer: in
 
 
 def compile_daily_face_positions(
-    start: str | np.datetime64,
-    end: str | np.datetime64,
-    longwall_df: pd.DataFrame
+    start: str | np.datetime64, end: str | np.datetime64, longwall_df: pd.DataFrame
 ) -> pd.DataFrame:
     """
     Get longwall face positions in one-day intervals
@@ -90,13 +94,42 @@ def compile_daily_face_positions(
     return face_positions
 
 
-def get_date_from_face_position(face_positions, reference_positions, ref_point="headgate") -> list[np.datetime64] | np.datetime64:
+def get_date_from_face_position(
+    face_positions: pd.DataFrame,
+    reference_positions: pd.DataFrame,
+    ref_point: str = "headgate",
+) -> list[np.datetime64] | np.datetime64:
+    """
+    Get a list of dates from the provided face positions
 
+    Parameters
+    ----------
+    face_positions
+        The face positions for which to estimate the date they were mining
+    reference_positions
+        Output from `compile_daily_face_positions`
+    ref_point
+        Whether to use the point on the headgate or on the tailgate for
+        determining the date
+
+    Returns
+    -------
+    The date(s) that the mine was at the specified face position
+
+    Notes
+    -----
+    It's highly recommended to only use this within a single panel. If the face
+    positions correspond to two different panels, do each as a separate
+    function call with the appropriate daily face positions.
+    """
     xcol = f"{ref_point}_x"
     ycol = f"{ref_point}_y"
 
     def _grab_date(fp) -> np.datetime64:
-        dist = np.sqrt((reference_positions[xcol] - fp[xcol])**2 + (reference_positions[ycol] - fp[ycol])**2)
+        dist = np.sqrt(
+            (reference_positions[xcol] - fp[xcol]) ** 2
+            + (reference_positions[ycol] - fp[ycol]) ** 2
+        )
         return reference_positions.loc[dist.idxmin()].date
 
     if isinstance(face_positions, pd.DataFrame):
@@ -108,9 +141,8 @@ def get_date_from_face_position(face_positions, reference_positions, ref_point="
         return _grab_date(face_positions)
 
 
-
 def read_longwall_df(pth: Path) -> pd.DataFrame:
-    """ Read a CSV containing information about longwall face positions """
-    return pd.read_csv(pth).assign(
-        local_time=lambda x: pd.to_datetime(x["local_date"])
-    )
+    """Read a CSV containing information about longwall face positions"""
+    df = pd.read_csv(pth)
+    df["local_time"] = pd.to_datetime(df["local_date"])
+    return df

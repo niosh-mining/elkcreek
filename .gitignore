@@ -15,4 +15,3 @@ report/
 pytest.ini
 
 *.egg-info
-uv.lock

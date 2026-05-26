@@ -97,7 +97,7 @@ plots = Path("plots")
 plots.mkdir(exist_ok=True)
 burst_map = plots / "p010_burst_events.png"
 station_map = plots / "p010_station_map.png"
-siteD_inst_map = plots / "p010_siteD_instrumentation.png"
+siteD_inst_map = plots / "p010_siteD_instrumentation.png"  # noqa: N816
 # can_map = plots / "p010_can_map.png"
 mag_hist_path = plots / "p020_mag_hists.png"
 dot_map_path = plots / "p030_dot_map.png"
@@ -152,7 +152,7 @@ burst_times = [
     "2012-12-02T18:44:37",
     "2013-01-02T10:11:58",
 ]
-time_zone = "US/Mountain"  # Local timezone at the mine.
+time_zone = "America/Denver"  # Local timezone at the mine.
 
 # instrumentation plot time range
 inst_time_range = (np.datetime64("2011-02-15T03"), np.datetime64("2011-02-21T10"))
@@ -177,40 +177,54 @@ outlier_params = dict(
 )
 
 # Panel start and end dates
-panel_dates = pd.DataFrame({
-    "panel1": ["2009-11-02", "2010-05-26"],
-    "p1_break": ["2010-05-26", "2010-08-24"],
-    "panel2": ["2010-08-24", "2011-02-18"],  # It's technically 2025-03-25, but in that time they mined just to the next crosscut to recover from the burst
-    "p2_break": ["2011-02-18", "2011-04-06"],
-    "panel2b": ["2011-04-06", "2011-06-21"],
-    "p2b_break": ["2011-06-21", "2011-07-09"],
-    "panel3": ["2011-07-09", "2011-10-19"],  # Same story as Panel 2.. actual end date is 2011-11-28
-    "p3_break": ["2011-10-19", "2012-02-17"],
-    "panel3b": ["2012-02-17", "2012-05-23"],
-    "p3b_break": ["2012-05-23", "2012-06-11"],
-    "panel4": ["2012-06-11", "2012-09-11"],
-    "p4_break": ["2012-09-11", "2012-09-26"],
-    "panel4b": ["2012-09-26", "2013-01-03"],
-    "post_mining": ["2013-01-03", "2014-05-14"],
-}, index=["start", "end"]).T
+panel_dates = pd.DataFrame(
+    {
+        "panel1": ["2009-11-02", "2010-05-26"],
+        "p1_break": ["2010-05-26", "2010-08-24"],
+        "panel2": [
+            "2010-08-24",
+            "2011-02-18",  # Technically 2025-03-25, but they didn't progress much
+        ],
+        "p2_break": ["2011-02-18", "2011-04-06"],
+        "panel2b": ["2011-04-06", "2011-06-21"],
+        "p2b_break": ["2011-06-21", "2011-07-09"],
+        "panel3": [
+            "2011-07-09",
+            "2011-10-19",
+        ],  # Same story as Panel 2.. actual end date is 2011-11-28
+        "p3_break": ["2011-10-19", "2012-02-17"],
+        "panel3b": ["2012-02-17", "2012-05-23"],
+        "p3b_break": ["2012-05-23", "2012-06-11"],
+        "panel4": ["2012-06-11", "2012-09-11"],
+        "p4_break": ["2012-09-11", "2012-09-26"],
+        "panel4b": ["2012-09-26", "2013-01-03"],
+        "post_mining": ["2013-01-03", "2014-05-14"],
+    },
+    index=["start", "end"],
+).T
 
 # Panel 1 face positions of interest
-p1_face_pos = pd.DataFrame([
-    [10905.5, 4828.2, 10845.2, 4596.6],
-    [11082.6, 4782.0, 11022.3, 4550.5],
-    [11259.7, 4735.9, 11199.4, 4504.3],
-    [11436.8, 4689.7, 11376.5, 4458.2],
-    [11613.9, 4643.6, 11553.6, 4412.1],
-    [11791.0, 4597.5, 11730.7, 4365.9],
-], columns=["headgate_x", "headgate_y", "tailgate_x", "tailgate_y"])
+p1_face_pos = pd.DataFrame(
+    [
+        [10905.5, 4828.2, 10845.2, 4596.6],
+        [11082.6, 4782.0, 11022.3, 4550.5],
+        [11259.7, 4735.9, 11199.4, 4504.3],
+        [11436.8, 4689.7, 11376.5, 4458.2],
+        [11613.9, 4643.6, 11553.6, 4412.1],
+        [11791.0, 4597.5, 11730.7, 4365.9],
+    ],
+    columns=["headgate_x", "headgate_y", "tailgate_x", "tailgate_y"],
+)
 
 # Panel 2 face positions of interest
-panel2_anomalous_event2 = pd.Series({
-    "headgate_x": 11301.48,
-    "headgate_y": 5111.04,
-    "tailgate_x": 11238.04,
-    "tailgate_y": 4867.52,
-})
+panel2_anomalous_event2 = pd.Series(
+    {
+        "headgate_x": 11301.48,
+        "headgate_y": 5111.04,
+        "tailgate_x": 11238.04,
+        "tailgate_y": 4867.52,
+    }
+)
 p2_face_start = pd.Timestamp("2011-01-17")
 p2_face_end = pd.Timestamp("2011-02-17T22:00")
 p2_time_series_start = p2_face_start
@@ -278,7 +292,7 @@ map_extents_event2 = {
     "y": [4034, 5339],
     "z": [1500, 2300],
 }
-map_extents_siteD = {
+map_extents_siteD = {  # noqa: N816
     "x": [11600, 11775],
     "y": [4700, 4825],
 }

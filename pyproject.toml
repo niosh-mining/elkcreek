@@ -7,7 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "numpy",
     "scipy",
-    "pandas",
+    "pandas>=3",
     "matplotlib",
     "seaborn",
     "pyarrow",
@@ -21,6 +21,7 @@ dependencies = [
     "jinja2",
     "rich",
     "mplstereonet",
+    "pytz",
 
 ]
 
@@ -103,10 +104,14 @@ filterwarnings = [
     'ignore::Warning:tables:'
 ]
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "pytest>=8.4.0",
+    "pre-commit",
 ]
+
+[tool.uv.extra-build-dependencies]
+grond = ["setuptools<71"]
 
 [tool.ruff.format]
 # Use `\n` line endings for all files
