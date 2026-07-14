@@ -113,6 +113,13 @@ dev = [
 [tool.uv.extra-build-dependencies]
 grond = ["setuptools<71"]
 
+[tool.uv]
+# Pinning msgpack floor until pytables releases a version that
+# addresses an associated vulnerable version.
+# See https://github.com/PyTables/PyTables/pull/1326.
+# Remove this once pytables > 3.11.1 is out.
+constraint-dependencies = ["msgpack>1.2"]
+
 [tool.ruff.format]
 # Use `\n` line endings for all files
 line-ending = "lf"
