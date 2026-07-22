@@ -114,11 +114,17 @@ dev = [
 grond = ["setuptools<71"]
 
 [tool.uv]
-# Pinning msgpack floor until pytables releases a version that
-# addresses an associated vulnerable version.
-# See https://github.com/PyTables/PyTables/pull/1326.
-# Remove this once pytables > 3.11.1 is out.
-constraint-dependencies = ["msgpack>1.2"]
+constraint-dependencies = [
+    # Pinning msgpack floor until pytables releases a version that
+    # addresses an associated vulnerable version.
+    # See https://github.com/PyTables/PyTables/pull/1326.
+    # Remove this once pytables > 3.11.1 is out.
+    "msgpack>1.2",
+    # Pin pillow until matplotlib releases changes their min version of
+    # pillow to 12.3.x
+    "pillow>=12.3.0",
+]
+
 
 [tool.ruff.format]
 # Use `\n` line endings for all files
