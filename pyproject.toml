@@ -26,7 +26,8 @@ dependencies = [
 ]
 
 [build-system]
-requires = [ "setuptools>=41", "setuptools-scm", ]
+#requires = [ "setuptools>=41", "setuptools-scm", ]
+requires = ["setuptools>=83", "setuptools-scm",]  # Let's see if this works...
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
