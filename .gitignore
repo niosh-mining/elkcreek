@@ -3,6 +3,7 @@
 **/__pycache__/
 **/.ipynb_checkpoints/
 **/*.egg_info/
+*.egg-info
 .~*
 
 # Project specific
@@ -13,5 +14,4 @@ report/
 # Shawn-specific things
 **/dont_commit/
 pytest.ini
-
-*.egg-info
+reqs.txt
